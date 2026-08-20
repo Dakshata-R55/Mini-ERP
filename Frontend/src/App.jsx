@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import LoginPage from './pages/LoginPage'
-import SignupPage from './pages/SignupPage'
-import ComingSoonPage from './pages/ComingSoonPage'
+import LoginPage from './Pages/LoginPage'
+import SignupPage from './Pages/SignupPage'
+import ComingSoonPage from './Pages/ComingSoonPage'
 
 export default function App() {
   const [screen, setScreen] = useState('login')
