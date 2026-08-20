@@ -1,0 +1,39 @@
+package com.Mini_ERP.dto;
+
+import com.Mini_ERP.model.ProcurementType;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+
+import java.math.BigDecimal;
+
+@Data
+public class ProductRequest {
+
+    @NotBlank
+    @Size(max = 200)
+    private String name;
+
+    @NotNull
+    @DecimalMin(value = "0.0", inclusive = true)
+    private BigDecimal salesPrice;
+
+    @NotNull
+    @DecimalMin(value = "0.0", inclusive = true)
+    private BigDecimal costPrice;
+
+    @NotNull
+    @DecimalMin(value = "0.0", inclusive = true)
+    private BigDecimal onHandQty;
+
+    private boolean procureOnDemand;
+
+    private ProcurementType procurementType;
+
+    private Long vendorId;
+    private String vendorName;
+
+    private Long bomId;
+    private String bomName;
+
+    private String imageUrl;
+}
