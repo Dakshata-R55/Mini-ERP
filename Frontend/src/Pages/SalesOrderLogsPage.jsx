@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
-import { getProductLogs } from '../api/auditLogs'
+import { getSalesOrderLogs } from '../api/auditLogs'
 
-export default function ProductLogsPage({
+export default function SalesOrderLogsPage({
   session,
   onSignOut,
   onNavigate,
-  productId,
+  orderId,
   onBack,
 }) {
   const [logs, setLogs] = useState([])
@@ -14,11 +14,11 @@ export default function ProductLogsPage({
   const [error, setError] = useState('')
 
   useEffect(() => {
-    async function loadLogs() {
+    async function load() {
       setLoading(true)
       setError('')
       try {
-        const data = await getProductLogs(productId)
+        const data = await getSalesOrderLogs(orderId)
         setLogs(data)
       } catch (err) {
         setError(err.message || 'Failed to load logs')
@@ -26,22 +26,21 @@ export default function ProductLogsPage({
         setLoading(false)
       }
     }
-
-    loadLogs()
-  }, [productId])
+    load()
+  }, [orderId])
 
   return (
     <AppShell
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
-      currentModule="products"
+      currentModule="sales-orders"
     >
       <div className="form-toolbar">
         <button type="button" className="ghost-btn" onClick={onBack}>
           Back
         </button>
-        <h2>Product Audit Logs</h2>
+        <h2>Sales Order Logs</h2>
       </div>
 
       {error ? <div className="error-banner">{error}</div> : null}
