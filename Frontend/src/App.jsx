@@ -7,11 +7,15 @@ import ProductLogsPage from './Pages/ProductLogsPage'
 import SalesOrdersPage from './Pages/SalesOrdersPage'
 import SalesOrderFormPage from './Pages/SalesOrderFormPage'
 import SalesOrderLogsPage from './Pages/SalesOrderLogsPage'
+import PurchaseOrdersPage from './Pages/PurchaseOrdersPage'
+import PurchaseOrderFormPage from './Pages/PurchaseOrderFormPage'
+import PurchaseOrderLogsPage from './Pages/PurchaseOrderLogsPage'
 import { clearToken } from './api/client'
 
 function homeScreenFor(userType) {
   if (userType === 'SYSTEM_ADMIN') return 'users'
   if (userType === 'SALES_USER') return 'sales-orders'
+  if (userType === 'PURCHASE_USER') return 'purchase-orders'
   if (userType === 'ADMIN' || userType === 'PROJECT_MANAGER') return 'products'
   return 'no-access'
 }
@@ -22,6 +26,7 @@ export default function App() {
   const [session, setSession] = useState(null)
   const [selectedProductId, setSelectedProductId] = useState(null)
   const [selectedSalesOrderId, setSelectedSalesOrderId] = useState(null)
+  const [selectedPurchaseOrderId, setSelectedPurchaseOrderId] = useState(null)
 
   function handleSuccess(data) {
     setSession(data)
@@ -33,12 +38,14 @@ export default function App() {
     setSession(null)
     setSelectedProductId(null)
     setSelectedSalesOrderId(null)
+    setSelectedPurchaseOrderId(null)
     setScreen('login')
     setLoginMode('user')
   }
 
   function handleNavigate(module) {
     if (module === 'sales-orders') setScreen('sales-orders')
+    if (module === 'purchase-orders') setScreen('purchase-orders')
     if (module === 'products') setScreen('products')
     if (module === 'users') setScreen('users')
   }
@@ -65,6 +72,56 @@ export default function App() {
           </button>
         </div>
       </div>
+    )
+  }
+
+  if (session && screen === 'purchase-orders') {
+    return (
+      <PurchaseOrdersPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+        onCreate={() => {
+          setSelectedPurchaseOrderId(null)
+          setScreen('purchase-order-form')
+        }}
+        onOpenOrder={(id) => {
+          setSelectedPurchaseOrderId(id)
+          setScreen('purchase-order-form')
+        }}
+      />
+    )
+  }
+
+  if (session && screen === 'purchase-order-form') {
+    return (
+      <PurchaseOrderFormPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+        orderId={selectedPurchaseOrderId}
+        onBack={(newId) => {
+          if (newId) setSelectedPurchaseOrderId(newId)
+          setScreen(newId ? 'purchase-order-form' : 'purchase-orders')
+        }}
+        onSaved={() => setScreen('purchase-orders')}
+        onOpenLogs={(id) => {
+          setSelectedPurchaseOrderId(id)
+          setScreen('purchase-order-logs')
+        }}
+      />
+    )
+  }
+
+  if (session && screen === 'purchase-order-logs') {
+    return (
+      <PurchaseOrderLogsPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+        orderId={selectedPurchaseOrderId}
+        onBack={() => setScreen('purchase-order-form')}
+      />
     )
   }
 
@@ -134,7 +191,7 @@ export default function App() {
       />
     )
   }
-  
+
   if (session && screen === 'product-form') {
     return (
       <ProductFormPage
@@ -151,7 +208,7 @@ export default function App() {
       />
     )
   }
-  
+
   if (session && screen === 'product-logs') {
     return (
       <ProductLogsPage
@@ -163,7 +220,6 @@ export default function App() {
       />
     )
   }
-  
 
   if (session && screen === 'users') {
     return (
