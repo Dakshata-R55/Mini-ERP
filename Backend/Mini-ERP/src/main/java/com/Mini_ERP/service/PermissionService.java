@@ -12,18 +12,12 @@ import java.util.Optional;
 public class PermissionService {
 
     public boolean canRead(AppUser user, ErpModule module) {
-        if (user.isSystemAdmin()) {
-            return true;
-        }
         return getPermission(user, module)
                 .map(p -> p.getAccessLevel() != AccessLevel.NONE || p.isCanRead())
                 .orElse(false);
     }
 
     public boolean canWrite(AppUser user, ErpModule module) {
-        if (user.isSystemAdmin()) {
-            return true;
-        }
         return getPermission(user, module)
                 .map(p -> p.getAccessLevel() == AccessLevel.ADMIN
                         || p.getAccessLevel() == AccessLevel.USER)
@@ -31,9 +25,6 @@ public class PermissionService {
     }
 
     public boolean canAdmin(AppUser user, ErpModule module) {
-        if (user.isSystemAdmin()) {
-            return true;
-        }
         return getPermission(user, module)
                 .map(p -> p.getAccessLevel() == AccessLevel.ADMIN)
                 .orElse(false);

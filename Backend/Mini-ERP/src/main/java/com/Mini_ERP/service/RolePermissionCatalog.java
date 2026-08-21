@@ -13,7 +13,20 @@ public class RolePermissionCatalog {
         user.getModulePermissions().clear();
         user.setUserType(type);
 
-        if (type == UserType.SYSTEM_ADMIN || type == UserType.ADMIN) {
+        // System Admin: user-role management only — no Sales/Purchase/Products/etc.
+        if (type == UserType.SYSTEM_ADMIN) {
+            for (ErpModule module : ErpModule.values()) {
+                if (module == ErpModule.USER_MANAGEMENT) {
+                    addPermission(user, module, AccessLevel.ADMIN, true);
+                } else {
+                    addPermission(user, module, AccessLevel.NONE, false);
+                }
+            }
+            return;
+        }
+
+        // Business ADMIN: full access to all modules
+        if (type == UserType.ADMIN) {
             for (ErpModule module : ErpModule.values()) {
                 addPermission(user, module, AccessLevel.ADMIN, true);
             }
@@ -52,7 +65,7 @@ public class RolePermissionCatalog {
         if (level != AccessLevel.NONE) {
             return true;
         }
-        if (type == UserType.NONE) {
+        if (type == UserType.NONE || type == UserType.SYSTEM_ADMIN) {
             return false;
         }
         return module == ErpModule.PRODUCTS || module == ErpModule.DASHBOARD;

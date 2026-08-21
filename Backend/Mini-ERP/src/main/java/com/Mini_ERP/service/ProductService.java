@@ -154,26 +154,20 @@ public class ProductService {
         }
     }
 
-    private void requireCatalogDeleteAccess() {
-        UserType type = currentUserType();
-        if (type != UserType.PROJECT_MANAGER
-                && type != UserType.SYSTEM_ADMIN
-                && type != UserType.ADMIN) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Only Project Manager can delete products"
-            );
-        }
+   private void requireCatalogDeleteAccess() {
+    UserType type = currentUserType();
+    if (type != UserType.PROJECT_MANAGER && type != UserType.ADMIN) {
+        throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "Only Project Manager can delete products"
+        );
     }
+}
 
-    /** Project Manager + admins may write On Hand (opening stock / manual stock). */
-    private boolean canManageStock() {
-        UserType type = currentUserType();
-        return type == UserType.PROJECT_MANAGER
-                || type == UserType.SYSTEM_ADMIN
-                || type == UserType.ADMIN;
-    }
-
+   private boolean canManageStock() {
+    UserType type = currentUserType();
+    return type == UserType.PROJECT_MANAGER || type == UserType.ADMIN;
+}
     private UserType currentUserType() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
