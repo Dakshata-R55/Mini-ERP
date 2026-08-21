@@ -27,4 +27,10 @@ public class AuditLogController {
     public List<AuditLogResponse> getProductLogs(@PathVariable Long productId) {
         return auditLogService.getLogsForEntity(ErpModule.PRODUCTS, productId);
     }
+
+    @GetMapping("/sales-orders/{orderId}")
+    @RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.READ)
+    public List<AuditLogResponse> getSalesOrderLogs(@PathVariable Long orderId) {
+        return auditLogService.getLogsForEntity(ErpModule.SALES, orderId);
+    }
 }
