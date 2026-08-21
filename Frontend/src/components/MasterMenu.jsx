@@ -3,6 +3,7 @@ export default function MasterMenu({ open, session, current, onNavigate, onClose
   
     const items = [
       { key: 'sales-orders', label: 'Sale Orders', roles: ['SALES_USER', 'ADMIN'] },
+      { key: 'purchase-orders', label: 'Purchase Orders', roles: ['PURCHASE_USER', 'ADMIN'] },
       { key: 'products', label: 'Products', roles: ['ADMIN', 'PROJECT_MANAGER'] },
       { key: 'users', label: 'User Management', roles: ['SYSTEM_ADMIN'] },
     ]
