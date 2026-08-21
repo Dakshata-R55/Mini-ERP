@@ -105,24 +105,30 @@ body {
   margin-bottom: 6px;
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   height: 44px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0 42px 0 14px;
+  padding: 0 14px;
   font-size: 14px;
   outline: none;
   background: #fff;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   border-color: var(--teal);
   box-shadow: 0 0 0 3px rgba(14, 138, 125, 0.12);
 }
 
 .password-wrap {
   position: relative;
+}
+
+.password-wrap input {
+  padding-right: 42px;
 }
 
 .password-wrap button {
@@ -151,6 +157,14 @@ body {
   cursor: pointer;
 }
 
+.primary-btn.small-btn {
+  width: auto;
+  min-width: 96px;
+  margin-top: 0;
+  padding: 0 18px;
+  height: 40px;
+}
+
 .primary-btn:hover:not(:disabled) {
   background: var(--teal-hover);
 }
@@ -167,7 +181,8 @@ body {
   font-size: 13px;
 }
 
-.auth-links .muted {
+.auth-links .muted,
+.muted {
   color: var(--muted);
 }
 
@@ -205,12 +220,195 @@ body {
   margin-bottom: 12px;
 }
 
-.coming-soon {
-  text-align: center;
+.erp-app {
+  min-height: 100svh;
+  background: var(--page-bg);
 }
 
-.coming-soon .meta {
-  margin: 16px 0 24px;
-  color: var(--muted);
+.erp-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 220px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.erp-header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.erp-header-center strong {
+  display: block;
   font-size: 14px;
+  color: var(--brand);
+}
+
+.erp-header-center span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.erp-logo {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.erp-header-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-pill {
+  font-size: 12px;
+  background: #eef6f5;
+  color: var(--teal);
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.erp-main {
+  padding: 20px;
+}
+
+.page-toolbar,
+.form-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.page-toolbar h2,
+.form-toolbar h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.form-toolbar {
+  justify-content: space-between;
+}
+
+.form-toolbar-left {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.icon-btn,
+.ghost-btn {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.table-card,
+.form-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.form-card {
+  padding: 20px;
+}
+
+.form-card h2 {
+  margin: 0 0 16px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 14px;
+}
+
+.data-table tbody tr {
+  cursor: pointer;
+}
+
+.data-table tbody tr:hover {
+  background: #f8fbfd;
+}
+
+.center-pad {
+  text-align: center;
+  padding: 24px;
+}
+
+.product-form-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+}
+
+.image-placeholder {
+  height: 180px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.money-input {
+  position: relative;
+}
+
+.money-input span {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.money-input input {
+  padding-left: 34px;
+}
+
+.readonly-input {
+  background: #f3f6f9 !important;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .product-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .erp-header {
+    grid-template-columns: 1fr;
+  }
 }
