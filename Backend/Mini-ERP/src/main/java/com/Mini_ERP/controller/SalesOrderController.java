@@ -61,13 +61,13 @@ public class SalesOrderController {
     }
 
     @PostMapping("/{id}/cancel")
-    @RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.ADMIN)
+    @RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.WRITE)
     public SalesOrderResponse cancelOrder(@PathVariable Long id) {
         return salesOrderService.cancelOrder(id);
     }
 
     @DeleteMapping("/{id}")
-    @RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.ADMIN)
+    @RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.WRITE)
     public void deleteOrder(@PathVariable Long id) {
         salesOrderService.deleteOrder(id);
     }

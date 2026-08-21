@@ -45,7 +45,7 @@ public class CustomerController {
     }
 
     @DeleteMapping("/{id}")
-    @RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.ADMIN)
+    @RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.WRITE)
     public void deleteCustomer(@PathVariable Long id) {
         customerService.deleteCustomer(id);
     }

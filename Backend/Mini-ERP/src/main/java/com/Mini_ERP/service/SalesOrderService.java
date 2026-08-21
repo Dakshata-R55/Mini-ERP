@@ -30,7 +30,6 @@ public class SalesOrderService {
     private final UserRepository userRepository;
     private final SalesOrderReferenceGenerator referenceGenerator;
     private final AuditLogService auditLogService;
-    private final PermissionService permissionService;
 
     public List<SalesOrderListResponse> listOrders(String status, Boolean late, String search) {
         SalesOrderStatus statusFilter = parseStatus(status);
@@ -167,7 +166,6 @@ public class SalesOrderService {
 
     @Transactional
     public SalesOrderResponse cancelOrder(Long id) {
-        requireSalesAdmin();
         SalesOrder order = findWithDetails(id);
 
         if (order.getStatus() == SalesOrderStatus.CANCELLED
@@ -191,7 +189,6 @@ public class SalesOrderService {
 
     @Transactional
     public void deleteOrder(Long id) {
-        requireSalesAdmin();
         SalesOrder order = findWithDetails(id);
         ensureDraft(order);
         order.setActive(false);
@@ -300,23 +297,12 @@ public class SalesOrderService {
         }
     }
 
-    private void requireSalesAdmin() {
-        var user = currentUser();
-        if (!permissionService.canAdmin(user, ErpModule.SALES)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sales admin access required");
-        }
-    }
-
-    private AppUser currentUser() {
+    private String currentUsername() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
-            return details.getUser();
+            return details.getUser().getLoginId();
         }
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
-    }
-
-    private String currentUsername() {
-        return currentUser().getLoginId();
     }
 
     private BigDecimal calculateOrderTotal(SalesOrder order) {
