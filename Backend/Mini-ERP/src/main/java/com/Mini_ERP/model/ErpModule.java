@@ -7,7 +7,6 @@ public enum ErpModule {
     PURCHASE,
     MANUFACTURING,
     BOM,
-    INVENTORY,
     AUDIT_LOGS,
     USER_MANAGEMENT
 }

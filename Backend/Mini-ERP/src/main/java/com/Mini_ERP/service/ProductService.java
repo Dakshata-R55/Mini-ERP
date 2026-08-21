@@ -3,6 +3,7 @@ package com.Mini_ERP.service;
 import com.Mini_ERP.dto.ProductListResponse;
 import com.Mini_ERP.dto.ProductRequest;
 import com.Mini_ERP.dto.ProductResponse;
+import com.Mini_ERP.dto.ProductStockRequest;
 import com.Mini_ERP.model.*;
 import com.Mini_ERP.repository.ProductRepository;
 import com.Mini_ERP.security.CustomUserDetails;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -35,17 +37,23 @@ public class ProductService {
         return toResponse(product);
     }
 
+    /**
+     * Create product. Project Manager may pass opening stock (On Hand).
+     * Other roles → On Hand = 0. Stock also moves via Sales/Purchase/MO later.
+     */
     @Transactional
-    public ProductResponse createProduct(ProductRequest request) {
+    public ProductResponse createProduct(ProductRequest request, BigDecimal openingStock) {
         validateProcurementSetup(request);
+
+        BigDecimal onHand = resolveOpeningStock(openingStock);
 
         Product product = Product.builder()
                 .reference(referenceGenerator.nextReference())
                 .name(request.getName().trim())
                 .salesPrice(request.getSalesPrice())
                 .costPrice(request.getCostPrice())
-                .onHandQty(request.getOnHandQty())
-                .reservedQty(java.math.BigDecimal.ZERO)
+                .onHandQty(onHand)
+                .reservedQty(BigDecimal.ZERO)
                 .procureOnDemand(request.isProcureOnDemand())
                 .procurementType(request.getProcurementType())
                 .vendorId(request.getVendorId())
@@ -61,6 +69,7 @@ public class ProductService {
         return toResponse(saved);
     }
 
+    /** Update product master only — never changes On Hand / Reserved. */
     @Transactional
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         validateProcurementSetup(request);
@@ -71,7 +80,6 @@ public class ProductService {
         existing.setName(request.getName().trim());
         existing.setSalesPrice(request.getSalesPrice());
         existing.setCostPrice(request.getCostPrice());
-        existing.setOnHandQty(request.getOnHandQty());
         existing.setProcureOnDemand(request.isProcureOnDemand());
         existing.setProcurementType(request.getProcurementType());
         existing.setVendorId(request.getVendorId());
@@ -85,8 +93,34 @@ public class ProductService {
         return toResponse(saved);
     }
 
+    /** Set or adjust On Hand qty — Project Manager (and admins) only. */
+    @Transactional
+    public ProductResponse updateStock(Long id, ProductStockRequest request) {
+        requireStockAccess();
+
+        Product existing = findActiveProduct(id);
+        BigDecimal beforeQty = existing.getOnHandQty();
+        existing.setOnHandQty(request.getOnHandQty());
+        Product saved = productRepository.save(existing);
+
+        auditLogService.logChange(
+                ErpModule.PRODUCTS,
+                saved.getId(),
+                saved.getReference(),
+                AuditAction.UPDATE,
+                "onHandQty",
+                beforeQty,
+                saved.getOnHandQty(),
+                currentUsername()
+        );
+
+        return toResponse(saved);
+    }
+
     @Transactional
     public void deleteProduct(Long id) {
+        requireCatalogDeleteAccess();
+
         Product product = findActiveProduct(id);
         product.setActive(false);
         productRepository.save(product);
@@ -101,6 +135,51 @@ public class ProductService {
                 false,
                 currentUsername()
         );
+    }
+
+    private BigDecimal resolveOpeningStock(BigDecimal openingStock) {
+        if (openingStock == null || openingStock.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+        requireStockAccess();
+        return openingStock;
+    }
+
+    private void requireStockAccess() {
+        if (!canManageStock()) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Only Project Manager can set or change stock quantities"
+            );
+        }
+    }
+
+    private void requireCatalogDeleteAccess() {
+        UserType type = currentUserType();
+        if (type != UserType.PROJECT_MANAGER
+                && type != UserType.SYSTEM_ADMIN
+                && type != UserType.ADMIN) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Only Project Manager can delete products"
+            );
+        }
+    }
+
+    /** Project Manager + admins may write On Hand (opening stock / manual stock). */
+    private boolean canManageStock() {
+        UserType type = currentUserType();
+        return type == UserType.PROJECT_MANAGER
+                || type == UserType.SYSTEM_ADMIN
+                || type == UserType.ADMIN;
+    }
+
+    private UserType currentUserType() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
+            return details.getUser().getUserType();
+        }
+        return UserType.NONE;
     }
 
     private void validateProcurementSetup(ProductRequest request) {
@@ -156,11 +235,9 @@ public class ProductService {
     }
 
     private void logUpdate(Product before, Product after) {
-        String user = currentUsername();
         auditField(before, after, "name");
         auditField(before, after, "salesPrice");
         auditField(before, after, "costPrice");
-        auditField(before, after, "onHandQty");
         auditField(before, after, "procureOnDemand");
         auditField(before, after, "procurementType");
         auditField(before, after, "vendorName");
@@ -172,7 +249,6 @@ public class ProductService {
             case "name" -> before.getName();
             case "salesPrice" -> before.getSalesPrice();
             case "costPrice" -> before.getCostPrice();
-            case "onHandQty" -> before.getOnHandQty();
             case "procureOnDemand" -> before.isProcureOnDemand();
             case "procurementType" -> before.getProcurementType();
             case "vendorName" -> before.getVendorName();
@@ -184,7 +260,6 @@ public class ProductService {
             case "name" -> after.getName();
             case "salesPrice" -> after.getSalesPrice();
             case "costPrice" -> after.getCostPrice();
-            case "onHandQty" -> after.getOnHandQty();
             case "procureOnDemand" -> after.isProcureOnDemand();
             case "procurementType" -> after.getProcurementType();
             case "vendorName" -> after.getVendorName();

@@ -38,11 +38,7 @@ public class RolePermissionCatalog {
                 map.put(ErpModule.MANUFACTURING, AccessLevel.USER);
                 map.put(ErpModule.BOM, AccessLevel.USER);
             }
-            case INVENTORY_MANAGER -> {
-                map.put(ErpModule.INVENTORY, AccessLevel.ADMIN);
-                map.put(ErpModule.PRODUCTS, AccessLevel.USER);
-            }
-            case BUSINESS_OWNER -> {
+            case PROJECT_MANAGER -> {
                 map.put(ErpModule.PRODUCTS, AccessLevel.ADMIN);
                 map.put(ErpModule.DASHBOARD, AccessLevel.USER);
             }

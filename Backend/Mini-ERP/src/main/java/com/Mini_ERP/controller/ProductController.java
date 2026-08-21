@@ -1,8 +1,10 @@
 package com.Mini_ERP.controller;
 
+import com.Mini_ERP.dto.ProductCreateRequest;
 import com.Mini_ERP.dto.ProductListResponse;
 import com.Mini_ERP.dto.ProductRequest;
 import com.Mini_ERP.dto.ProductResponse;
+import com.Mini_ERP.dto.ProductStockRequest;
 import com.Mini_ERP.model.ErpModule;
 import com.Mini_ERP.security.RequiresModuleAccess;
 import com.Mini_ERP.service.ProductService;
@@ -33,8 +35,8 @@ public class ProductController {
 
     @PostMapping
     @RequiresModuleAccess(module = ErpModule.PRODUCTS, action = RequiresModuleAccess.Action.WRITE)
-    public ProductResponse createProduct(@Valid @RequestBody ProductRequest request) {
-        return productService.createProduct(request);
+    public ProductResponse createProduct(@Valid @RequestBody ProductCreateRequest request) {
+        return productService.createProduct(request, request.getOpeningStock());
     }
 
     @PutMapping("/{id}")
@@ -43,6 +45,14 @@ public class ProductController {
             @PathVariable Long id,
             @Valid @RequestBody ProductRequest request) {
         return productService.updateProduct(id, request);
+    }
+
+    @PatchMapping("/{id}/stock")
+    @RequiresModuleAccess(module = ErpModule.PRODUCTS, action = RequiresModuleAccess.Action.WRITE)
+    public ProductResponse updateStock(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductStockRequest request) {
+        return productService.updateStock(id, request);
     }
 
     @DeleteMapping("/{id}")
