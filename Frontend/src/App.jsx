@@ -10,6 +10,7 @@ import SalesOrderLogsPage from './Pages/SalesOrderLogsPage'
 import PurchaseOrdersPage from './Pages/PurchaseOrdersPage'
 import PurchaseOrderFormPage from './Pages/PurchaseOrderFormPage'
 import PurchaseOrderLogsPage from './Pages/PurchaseOrderLogsPage'
+import UserManagementPage from './Pages/UserManagementPage'
 import { clearToken } from './api/client'
 
 function homeScreenFor(userType) {
@@ -72,6 +73,16 @@ export default function App() {
           </button>
         </div>
       </div>
+    )
+  }
+
+  if (session && screen === 'users') {
+    return (
+      <UserManagementPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+      />
     )
   }
 
@@ -218,20 +229,6 @@ export default function App() {
         productId={selectedProductId}
         onBack={() => setScreen('product-form')}
       />
-    )
-  }
-
-  if (session && screen === 'users') {
-    return (
-      <div className="auth-page">
-        <div className="auth-card coming-soon">
-          <h2 className="auth-title">User Management</h2>
-          <p className="auth-subtitle">Build UserManagementPage next for System Admin.</p>
-          <button className="primary-btn" type="button" onClick={handleSignOut}>
-            Sign out
-          </button>
-        </div>
-      </div>
     )
   }
 

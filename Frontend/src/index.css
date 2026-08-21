@@ -608,3 +608,35 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* --- System Admin / User Management --- */
+.toolbar-note {
+  margin: 0;
+  font-size: 13px;
+}
+
+.success-banner {
+  background: #e8f8f1;
+  color: #0b7a55;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.user-table select {
+  min-width: 180px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #fff;
+}
+
+.user-table tbody tr {
+  cursor: default;
+}
+
+.user-table tbody tr:hover {
+  background: #f8fbfd;
+}
