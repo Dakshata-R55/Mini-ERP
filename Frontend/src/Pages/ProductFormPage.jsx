@@ -5,6 +5,7 @@ import { createProduct, getProduct, updateProduct } from '../api/products'
 
 const emptyForm = {
   name: '',
+  productType: 'FINISHED_GOOD',
   salesPrice: '',
   costPrice: '',
   onHandQty: '0',
@@ -43,6 +44,7 @@ export default function ProductFormPage({
         setReference(data.reference)
         setForm({
           name: data.name,
+          productType: data.productType || 'FINISHED_GOOD',
           salesPrice: String(data.salesPrice),
           costPrice: String(data.costPrice),
           onHandQty: String(data.onHandQty),
@@ -64,14 +66,16 @@ export default function ProductFormPage({
   }, [isEdit, productId])
 
   function buildPayload() {
+    const isRaw = form.productType === 'RAW_MATERIAL'
     const base = {
       name: form.name.trim(),
-      salesPrice: Number(form.salesPrice),
+      productType: form.productType,
+      salesPrice: isRaw ? Number(form.salesPrice || 0) : Number(form.salesPrice),
       costPrice: Number(form.costPrice),
-      procureOnDemand: form.procureOnDemand,
-      procurementType: form.procureOnDemand ? form.procurementType : null,
-      vendorName: form.procurementType === 'PURCHASE' ? form.vendorName.trim() : null,
-      bomName: form.procurementType === 'MANUFACTURING' ? form.bomName.trim() : null,
+      procureOnDemand: isRaw ? false : form.procureOnDemand,
+      procurementType: isRaw || !form.procureOnDemand ? null : form.procurementType,
+      vendorName: isRaw || form.procurementType !== 'PURCHASE' ? null : form.vendorName.trim(),
+      bomName: isRaw || form.procurementType !== 'MANUFACTURING' ? null : form.bomName.trim(),
       imageUrl: form.imageUrl || null,
     }
 

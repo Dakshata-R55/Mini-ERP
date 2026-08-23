@@ -58,7 +58,7 @@ export default function PurchaseOrderFormPage({
     try {
       const [vendorData, productData] = await Promise.all([
         listVendors(),
-        listProducts(),
+        listProducts({ type: 'RAW_MATERIAL' }),
       ])
       setVendors(vendorData)
       setProducts(productData)

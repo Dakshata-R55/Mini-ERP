@@ -1,5 +1,6 @@
 package com.Mini_ERP.dto;
 
+import com.Mini_ERP.model.ProductType;
 import com.Mini_ERP.model.ProcurementStrategy;
 import com.Mini_ERP.model.ProcurementType;
 import lombok.Builder;
@@ -15,6 +16,7 @@ public class ProductResponse {
     private Long id;
     private String reference;
     private String name;
+    private ProductType productType;
     private BigDecimal salesPrice;
     private BigDecimal costPrice;
     private BigDecimal onHandQty;

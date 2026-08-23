@@ -30,6 +30,7 @@ public class PurchaseOrderService {
     private final UserRepository userRepository;
     private final PurchaseOrderReferenceGenerator referenceGenerator;
     private final AuditLogService auditLogService;
+    private final InventoryService inventoryService;
 
     public List<PurchaseOrderListResponse> listOrders(String status, Boolean late, String search) {
         PurchaseOrderStatus statusFilter = parseStatus(status);
@@ -132,10 +133,14 @@ public class PurchaseOrderService {
 
             BigDecimal delta = newReceived.subtract(line.getReceivedQty());
             if (delta.compareTo(BigDecimal.ZERO) > 0) {
-                Product product = line.getProduct();
                 BigDecimal beforeQty = line.getReceivedQty();
-                product.setOnHandQty(product.getOnHandQty().add(delta));
-                productRepository.save(product);
+                inventoryService.adjustOnHand(
+                        line.getProduct().getId(),
+                        delta,
+                        ErpModule.PURCHASE,
+                        StockMovementType.PURCHASE_RECEIVE,
+                        order.getReference(),
+                        order.getId());
                 line.setReceivedQty(newReceived);
 
                 auditLogService.logChange(ErpModule.PURCHASE, order.getId(), order.getReference(),
@@ -174,6 +179,43 @@ public class PurchaseOrderService {
     }
 
     @Transactional
+    public PurchaseOrder createDraftForRawShortages(Map<Long, BigDecimal> rawShortages) {
+        if (rawShortages == null || rawShortages.isEmpty()) {
+            return null;
+        }
+
+        Vendor vendor = vendorService.findFirstActiveOrNull();
+        if (vendor == null) {
+            return null;
+        }
+
+        List<PurchaseOrderLineRequest> lineRequests = rawShortages.entrySet().stream()
+                .map(entry -> {
+                    PurchaseOrderLineRequest req = new PurchaseOrderLineRequest();
+                    req.setProductId(entry.getKey());
+                    req.setOrderedQty(entry.getValue());
+                    return req;
+                })
+                .toList();
+
+        PurchaseOrder order = PurchaseOrder.builder()
+                .reference(referenceGenerator.nextReference())
+                .status(PurchaseOrderStatus.DRAFT)
+                .vendor(vendor)
+                .vendorAddress(resolveAddress(null, vendor))
+                .startDate(LocalDate.now())
+                .active(true)
+                .build();
+
+        order.getLines().addAll(buildLines(order, lineRequests));
+        PurchaseOrder saved = purchaseOrderRepository.save(order);
+
+        auditLogService.logChange(ErpModule.PURCHASE, saved.getId(), saved.getReference(),
+                AuditAction.CREATE, "status", null, saved.getStatus(), "system");
+        return saved;
+    }
+
+    @Transactional
     public void deleteOrder(Long id) {
         PurchaseOrder order = findWithDetails(id);
         ensureDraft(order);
@@ -191,6 +233,14 @@ public class PurchaseOrderService {
                             .filter(Product::isActive)
                             .orElseThrow(() -> new ResponseStatusException(
                                     HttpStatus.BAD_REQUEST, "Product not found: " + req.getProductId()));
+
+                    if (product.getProductType() != ProductType.RAW_MATERIAL) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Purchase orders can only include raw material products. "
+                                        + product.getReference() + " is a finished good."
+                        );
+                    }
 
                     BigDecimal unitCostPrice = req.getUnitCostPrice() != null
                             ? req.getUnitCostPrice()
@@ -211,9 +261,13 @@ public class PurchaseOrderService {
     private void reverseReceivedStock(PurchaseOrder order) {
         for (PurchaseOrderLine line : order.getLines()) {
             if (line.getReceivedQty().compareTo(BigDecimal.ZERO) > 0) {
-                Product product = line.getProduct();
-                product.setOnHandQty(product.getOnHandQty().subtract(line.getReceivedQty()));
-                productRepository.save(product);
+                inventoryService.adjustOnHand(
+                        line.getProduct().getId(),
+                        line.getReceivedQty().negate(),
+                        ErpModule.PURCHASE,
+                        StockMovementType.PURCHASE_REVERSE,
+                        order.getReference(),
+                        order.getId());
             }
         }
     }

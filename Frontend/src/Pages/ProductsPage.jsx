@@ -53,6 +53,7 @@ export default function ProductsPage({ session, onSignOut,onNavigate,onCreate, o
             <thead>
               <tr>
                 <th />
+                <th>Type</th>
                 <th>Reference</th>
                 <th>Product</th>
                 <th>Sales Price</th>
@@ -63,7 +64,7 @@ export default function ProductsPage({ session, onSignOut,onNavigate,onCreate, o
             <tbody>
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="center-pad muted">
+                  <td colSpan="7" className="center-pad muted">
                     No products yet. Click + New to create one.
                   </td>
                 </tr>
@@ -73,6 +74,7 @@ export default function ProductsPage({ session, onSignOut,onNavigate,onCreate, o
                     <td>
                       <input type="checkbox" onClick={(e) => e.stopPropagation()} />
                     </td>
+                    <td>{product.productType === 'RAW_MATERIAL' ? 'Raw Material' : 'Finished Good'}</td>
                     <td>{product.reference}</td>
                     <td>{product.name}</td>
                     <td>{formatMoney(product.salesPrice)}</td>

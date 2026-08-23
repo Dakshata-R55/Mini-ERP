@@ -2,8 +2,9 @@ import { apiFetch, getToken } from './client'
 
 const BASE = '/api/products'
 
-export function listProducts() {
-  return apiFetch(BASE)
+export function listProducts({ type } = {}) {
+  const query = type ? `?type=${encodeURIComponent(type)}` : ''
+  return apiFetch(`${BASE}${query}`)
 }
 
 export function getProduct(id) {

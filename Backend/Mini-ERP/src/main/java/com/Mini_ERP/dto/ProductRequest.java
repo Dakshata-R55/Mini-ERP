@@ -1,5 +1,6 @@
 package com.Mini_ERP.dto;
 
+import com.Mini_ERP.model.ProductType;
 import com.Mini_ERP.model.ProcurementType;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -13,6 +14,10 @@ public class ProductRequest {
     @Size(max = 200)
     private String name;
 
+    @NotNull
+    private ProductType productType;
+
+  /** Required for finished goods; raw materials may use zero. */
     @NotNull
     @DecimalMin(value = "0.0", inclusive = true)
     private BigDecimal salesPrice;

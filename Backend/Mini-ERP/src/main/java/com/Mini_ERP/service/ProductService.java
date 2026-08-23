@@ -25,9 +25,10 @@ public class ProductService {
     private final ProductReferenceGenerator referenceGenerator;
     private final AuditLogService auditLogService;
 
-    public List<ProductListResponse> getAllProducts() {
+    public List<ProductListResponse> getAllProducts(ProductType typeFilter) {
         return productRepository.findAll().stream()
                 .filter(Product::isActive)
+                .filter(p -> typeFilter == null || p.getProductType() == typeFilter)
                 .map(this::toListResponse)
                 .toList();
     }
@@ -43,6 +44,7 @@ public class ProductService {
      */
     @Transactional
     public ProductResponse createProduct(ProductRequest request, BigDecimal openingStock) {
+        validateProductTypeRules(request);
         validateProcurementSetup(request);
 
         BigDecimal onHand = resolveOpeningStock(openingStock);
@@ -50,6 +52,7 @@ public class ProductService {
         Product product = Product.builder()
                 .reference(referenceGenerator.nextReference())
                 .name(request.getName().trim())
+                .productType(request.getProductType())
                 .salesPrice(request.getSalesPrice())
                 .costPrice(request.getCostPrice())
                 .onHandQty(onHand)
@@ -72,12 +75,14 @@ public class ProductService {
     /** Update product master only — never changes On Hand / Reserved. */
     @Transactional
     public ProductResponse updateProduct(Long id, ProductRequest request) {
+        validateProductTypeRules(request);
         validateProcurementSetup(request);
 
         Product existing = findActiveProduct(id);
         Product before = copyForAudit(existing);
 
         existing.setName(request.getName().trim());
+        existing.setProductType(request.getProductType());
         existing.setSalesPrice(request.getSalesPrice());
         existing.setCostPrice(request.getCostPrice());
         existing.setProcureOnDemand(request.isProcureOnDemand());
@@ -176,8 +181,24 @@ public class ProductService {
         return UserType.NONE;
     }
 
+    private void validateProductTypeRules(ProductRequest request) {
+        if (request.getProductType() == ProductType.RAW_MATERIAL) {
+            if (request.isProcureOnDemand()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Raw materials cannot use Procure on Demand"
+                );
+            }
+            return;
+        }
+        if (request.getProductType() == ProductType.FINISHED_GOOD && request.getProcurementType() == null
+                && request.isProcureOnDemand()) {
+            // finished goods may still have legacy procure flags
+        }
+    }
+
     private void validateProcurementSetup(ProductRequest request) {
-        if (!request.isProcureOnDemand()) {
+        if (request.getProductType() == ProductType.RAW_MATERIAL) {
             return;
         }
 
@@ -278,6 +299,7 @@ public class ProductService {
                 .id(p.getId())
                 .reference(p.getReference())
                 .name(p.getName())
+                .productType(p.getProductType())
                 .salesPrice(p.getSalesPrice())
                 .costPrice(p.getCostPrice())
                 .onHandQty(p.getOnHandQty())
@@ -302,6 +324,7 @@ public class ProductService {
                 .id(product.getId())
                 .reference(product.getReference())
                 .name(product.getName())
+                .productType(product.getProductType())
                 .salesPrice(product.getSalesPrice())
                 .costPrice(product.getCostPrice())
                 .onHandQty(product.getOnHandQty())
@@ -315,6 +338,7 @@ public class ProductService {
                 .id(product.getId())
                 .reference(product.getReference())
                 .name(product.getName())
+                .productType(product.getProductType())
                 .salesPrice(product.getSalesPrice())
                 .costPrice(product.getCostPrice())
                 .onHandQty(product.getOnHandQty())
