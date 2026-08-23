@@ -62,7 +62,7 @@ export default function SalesOrderFormPage({
     try {
       const [customerData, productData] = await Promise.all([
         listCustomers(),
-        listProducts(),
+        listProducts({ type: 'FINISHED_GOOD' }),
       ])
       setCustomers(customerData)
       setProducts(productData)
