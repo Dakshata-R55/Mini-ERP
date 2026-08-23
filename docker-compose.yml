@@ -36,6 +36,8 @@ services:
       APP_JWT_SECRET: ${APP_JWT_SECRET:-ReplaceThisWithALongRandomSecretKeyOfAtLeast32Chars}
     ports:
       - "8080:8080"
+    volumes:
+      - mini_erp_uploads:/app/uploads
 
   frontend:
     build:
@@ -50,3 +52,4 @@ services:
 
 volumes:
   mini_erp_mysql_data:
+  mini_erp_uploads:

@@ -1,16 +1,20 @@
 package com.Mini_ERP.controller;
 
 import com.Mini_ERP.dto.ProductCreateRequest;
+import com.Mini_ERP.dto.ProductImageUploadResponse;
 import com.Mini_ERP.dto.ProductListResponse;
 import com.Mini_ERP.dto.ProductRequest;
 import com.Mini_ERP.dto.ProductResponse;
 import com.Mini_ERP.dto.ProductStockRequest;
 import com.Mini_ERP.model.ErpModule;
 import com.Mini_ERP.security.RequiresModuleAccess;
+import com.Mini_ERP.service.ProductImageStorageService;
 import com.Mini_ERP.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -20,6 +24,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductImageStorageService productImageStorageService;
 
     @GetMapping
     @RequiresModuleAccess(module = ErpModule.PRODUCTS, action = RequiresModuleAccess.Action.READ)
@@ -59,5 +64,11 @@ public class ProductController {
     @RequiresModuleAccess(module = ErpModule.PRODUCTS, action = RequiresModuleAccess.Action.ADMIN)
     public void deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
+    }
+
+    @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @RequiresModuleAccess(module = ErpModule.PRODUCTS, action = RequiresModuleAccess.Action.WRITE)
+    public ProductImageUploadResponse uploadImage(@RequestParam("file") MultipartFile file) {
+        return new ProductImageUploadResponse(productImageStorageService.store(file));
     }
 }
