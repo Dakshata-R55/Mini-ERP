@@ -25,6 +25,11 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private ProductType productType = ProductType.FINISHED_GOOD;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal salesPrice;
 
