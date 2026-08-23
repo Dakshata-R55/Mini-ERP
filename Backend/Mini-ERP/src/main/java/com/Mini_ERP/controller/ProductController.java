@@ -7,6 +7,7 @@ import com.Mini_ERP.dto.ProductRequest;
 import com.Mini_ERP.dto.ProductResponse;
 import com.Mini_ERP.dto.ProductStockRequest;
 import com.Mini_ERP.model.ErpModule;
+import com.Mini_ERP.model.ProductType;
 import com.Mini_ERP.security.RequiresModuleAccess;
 import com.Mini_ERP.service.ProductImageStorageService;
 import com.Mini_ERP.service.ProductService;
@@ -28,8 +29,8 @@ public class ProductController {
 
     @GetMapping
     @RequiresModuleAccess(module = ErpModule.PRODUCTS, action = RequiresModuleAccess.Action.READ)
-    public List<ProductListResponse> listProducts() {
-        return productService.getAllProducts();
+    public List<ProductListResponse> listProducts(@RequestParam(required = false) ProductType type) {
+        return productService.getAllProducts(type);
     }
 
     @GetMapping("/{id}")

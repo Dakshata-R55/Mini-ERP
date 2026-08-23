@@ -95,6 +95,30 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
 
       <div className="product-form-left">
         <div className="field">
+          <label htmlFor="productType">Product Type</label>
+          <select
+            id="productType"
+            value={form.productType || 'FINISHED_GOOD'}
+            onChange={(e) => {
+              const productType = e.target.value
+              onChange({
+                ...form,
+                productType,
+                procureOnDemand: productType === 'RAW_MATERIAL' ? false : form.procureOnDemand,
+                procurementType: productType === 'RAW_MATERIAL' ? '' : form.procurementType,
+                vendorName: productType === 'RAW_MATERIAL' ? '' : form.vendorName,
+                bomName: productType === 'RAW_MATERIAL' ? '' : form.bomName,
+                salesPrice: productType === 'RAW_MATERIAL' ? form.salesPrice || '0' : form.salesPrice,
+              })
+            }}
+            required
+          >
+            <option value="FINISHED_GOOD">Finished Good</option>
+            <option value="RAW_MATERIAL">Raw Material</option>
+          </select>
+        </div>
+
+        <div className="field">
           <label htmlFor="name">Product</label>
           <input
             id="name"
@@ -104,21 +128,23 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
           />
         </div>
 
-        <div className="field">
-          <label htmlFor="salesPrice">Sales Price</label>
-          <div className="money-input">
-            <span>₹</span>
-            <input
-              id="salesPrice"
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.salesPrice}
-              onChange={(e) => setField('salesPrice', e.target.value)}
-              required
-            />
+        {form.productType !== 'RAW_MATERIAL' ? (
+          <div className="field">
+            <label htmlFor="salesPrice">Sales Price</label>
+            <div className="money-input">
+              <span>₹</span>
+              <input
+                id="salesPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.salesPrice}
+                onChange={(e) => setField('salesPrice', e.target.value)}
+                required
+              />
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div className="field">
           <label htmlFor="costPrice">Cost Price</label>
@@ -215,6 +241,7 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
           </div>
         </div>
 
+        {form.productType === 'FINISHED_GOOD' ? (
         <label className="checkbox-row">
           <input
             type="checkbox"
@@ -223,8 +250,9 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
           />
           Procure on Demand
         </label>
+        ) : null}
 
-        {form.procureOnDemand ? (
+        {form.productType === 'FINISHED_GOOD' && form.procureOnDemand ? (
           <>
             <div className="field">
               <label htmlFor="procurementType">Procurement Type</label>
