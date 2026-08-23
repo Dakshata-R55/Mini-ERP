@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
 import SalesOrderLineTable from '../components/SalesOrderLineTable'
+import CustomerFormModal from '../components/CustomerFormModal'
 import { listCustomers } from '../api/customers'
 import { listProducts } from '../api/products'
 import {
@@ -42,6 +43,7 @@ export default function SalesOrderFormPage({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [customerModalOpen, setCustomerModalOpen] = useState(false)
 
   const status = order?.status || 'DRAFT'
   const isDraft = status === 'DRAFT'
@@ -180,6 +182,19 @@ export default function SalesOrderFormPage({
     })
   }
 
+  function handleCustomerCreated(created) {
+    setCustomers((prev) => {
+      const exists = prev.some((c) => c.id === created.id)
+      if (exists) return prev
+      return [...prev, created].sort((a, b) => a.name.localeCompare(b.name))
+    })
+    setForm({
+      ...form,
+      customerId: String(created.id),
+      customerAddress: created.address || '',
+    })
+  }
+
   return (
     <AppShell
       session={session}
@@ -259,19 +274,30 @@ export default function SalesOrderFormPage({
             <div className="so-form-grid">
               <div className="field">
                 <label>Customer</label>
-                <select
-                  value={form.customerId}
-                  disabled={readonly}
-                  onChange={(e) => handleCustomerChange(e.target.value)}
-                  required
-                >
-                  <option value="">Select customer</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="customer-field-row">
+                  <select
+                    value={form.customerId}
+                    disabled={readonly}
+                    onChange={(e) => handleCustomerChange(e.target.value)}
+                    required
+                  >
+                    <option value="">Select customer</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!readonly ? (
+                    <button
+                      type="button"
+                      className="ghost-btn"
+                      onClick={() => setCustomerModalOpen(true)}
+                    >
+                      + Add Customer
+                    </button>
+                  ) : null}
+                </div>
               </div>
 
               <div className="field">
@@ -299,7 +325,11 @@ export default function SalesOrderFormPage({
 
               <div className="field">
                 <label>Sales Person</label>
-                <input value={order?.salesPersonName || session.loginId} readOnly className="readonly-input" />
+                <input
+                  value={order?.salesPersonName || session.loginId}
+                  readOnly
+                  className="readonly-input"
+                />
               </div>
             </div>
 
@@ -322,6 +352,12 @@ export default function SalesOrderFormPage({
           </>
         )}
       </div>
+
+      <CustomerFormModal
+        open={customerModalOpen}
+        onClose={() => setCustomerModalOpen(false)}
+        onCreated={handleCustomerCreated}
+      />
     </AppShell>
   )
 }

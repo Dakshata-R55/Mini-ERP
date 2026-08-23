@@ -9,6 +9,7 @@ const emptyForm = {
   costPrice: '',
   onHandQty: '0',
   freeToUseQty: '0.00',
+  imageUrl: '',
   procureOnDemand: false,
   procurementType: '',
   vendorName: '',
@@ -46,6 +47,7 @@ export default function ProductFormPage({
           costPrice: String(data.costPrice),
           onHandQty: String(data.onHandQty),
           freeToUseQty: Number(data.freeToUseQty || 0).toFixed(2),
+          imageUrl: data.imageUrl || '',
           procureOnDemand: data.procureOnDemand,
           procurementType: data.procurementType || '',
           vendorName: data.vendorName || '',
@@ -62,15 +64,24 @@ export default function ProductFormPage({
   }, [isEdit, productId])
 
   function buildPayload() {
-    return {
+    const base = {
       name: form.name.trim(),
       salesPrice: Number(form.salesPrice),
       costPrice: Number(form.costPrice),
-      onHandQty: Number(form.onHandQty),
       procureOnDemand: form.procureOnDemand,
       procurementType: form.procureOnDemand ? form.procurementType : null,
       vendorName: form.procurementType === 'PURCHASE' ? form.vendorName.trim() : null,
       bomName: form.procurementType === 'MANUFACTURING' ? form.bomName.trim() : null,
+      imageUrl: form.imageUrl || null,
+    }
+
+    if (isEdit) {
+      return base
+    }
+
+    return {
+      ...base,
+      openingStock: Number(form.onHandQty || 0),
     }
   }
 
@@ -136,7 +147,7 @@ export default function ProductFormPage({
         {loading ? (
           <p className="muted">Loading...</p>
         ) : (
-          <ProductFormFields form={form} onChange={setForm} />
+          <ProductFormFields form={form} onChange={setForm} readOnlyQty={isEdit} />
         )}
       </div>
     </AppShell>
