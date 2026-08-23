@@ -81,6 +81,10 @@ public class VendorService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vendor not found"));
     }
 
+    public Vendor findFirstActiveOrNull() {
+        return vendorRepository.findFirstByActiveTrueOrderByNameAsc().orElse(null);
+    }
+
     private String currentUsername() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {

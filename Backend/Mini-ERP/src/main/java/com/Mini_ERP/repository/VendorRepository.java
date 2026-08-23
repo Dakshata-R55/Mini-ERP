@@ -13,4 +13,6 @@ public interface VendorRepository extends JpaRepository<Vendor, Long> {
     Optional<Vendor> findByIdAndActiveTrue(Long id);
 
     boolean existsByNameIgnoreCase(String name);
+
+    Optional<Vendor> findFirstByActiveTrueOrderByNameAsc();
 }
