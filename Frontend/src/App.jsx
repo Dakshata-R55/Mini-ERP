@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import LoginPage from './Pages/LoginPage'
 import SignupPage from './Pages/SignupPage'
+import DashboardPage from './Pages/DashboardPage'
 import ProductsPage from './Pages/ProductsPage'
 import ProductFormPage from './Pages/ProductFormPage'
 import ProductLogsPage from './Pages/ProductLogsPage'
@@ -16,9 +17,9 @@ import { getToken, clearToken } from './api/client'
 
 function homeScreenFor(userType) {
   if (userType === 'SYSTEM_ADMIN') return 'users'
-  if (userType === 'SALES_USER') return 'sales-orders'
-  if (userType === 'PURCHASE_USER') return 'purchase-orders'
-  if (userType === 'ADMIN' || userType === 'PROJECT_MANAGER') return 'products'
+  if (userType === 'SALES_USER') return 'dashboard'
+  if (userType === 'PURCHASE_USER') return 'dashboard'
+  if (userType === 'ADMIN' || userType === 'PROJECT_MANAGER') return 'dashboard'
   return 'no-access'
 }
 
@@ -70,6 +71,7 @@ export default function App() {
   }
 
   function handleNavigate(module) {
+    if (module === 'dashboard') setScreen('dashboard')
     if (module === 'sales-orders') setScreen('sales-orders')
     if (module === 'purchase-orders') setScreen('purchase-orders')
     if (module === 'products') setScreen('products')
@@ -108,6 +110,16 @@ export default function App() {
           </button>
         </div>
       </div>
+    )
+  }
+
+  if (session && screen === 'dashboard') {
+    return (
+      <DashboardPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+      />
     )
   }
 

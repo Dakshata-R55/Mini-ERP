@@ -1,10 +1,21 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { uploadProductImage } from '../api/products'
 
 const MAX_BYTES = 2 * 1024 * 1024
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
+
+function normalizeImageType(file) {
+  if (file.type === 'image/jpg') return 'image/jpeg'
+  if (file.type) return file.type
+  const name = file.name?.toLowerCase() || ''
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg'
+  if (name.endsWith('.png')) return 'image/png'
+  if (name.endsWith('.webp')) return 'image/webp'
+  return ''
+}
 
 export default function ProductFormFields({ form, onChange, readOnlyQty = false }) {
+  const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
 
@@ -13,17 +24,12 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
   }
 
   function handleProcureToggle(checked) {
-    const next = {
-      ...form,
-      procureOnDemand: checked,
-    }
-
+    const next = { ...form, procureOnDemand: checked }
     if (!checked) {
       next.procurementType = ''
       next.vendorName = ''
       next.bomName = ''
     }
-
     onChange(next)
   }
 
@@ -36,14 +42,20 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
     })
   }
 
+  function openFilePicker() {
+    if (uploading) return
+    fileInputRef.current?.click()
+  }
+
   async function handleImagePick(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
 
     setUploadError('')
+    const normalizedType = normalizeImageType(file)
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    if (!ALLOWED_TYPES.includes(file.type) && !normalizedType) {
       setUploadError('Only JPG, PNG, or WEBP images are allowed')
       return
     }
@@ -70,6 +82,17 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
 
   return (
     <div className="product-form-grid">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,.jpg,.jpeg"
+        onChange={handleImagePick}
+        disabled={uploading}
+        className="hidden-file-input"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+
       <div className="product-form-left">
         <div className="field">
           <label htmlFor="name">Product</label>
@@ -144,32 +167,40 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
           <label className="product-image-label">Product Image</label>
 
           {form.imageUrl ? (
-            <div className="product-image-preview-wrap">
+            <button
+              type="button"
+              className="product-image-preview-wrap clickable-image"
+              onClick={openFilePicker}
+              aria-label="Change product image"
+            >
               <img
                 src={form.imageUrl}
                 alt={form.name || 'Product'}
                 className="product-image-preview"
               />
-            </div>
+            </button>
           ) : (
-            <div className="image-placeholder">
-              <span>No image</span>
-            </div>
+            <button
+              type="button"
+              className="image-placeholder clickable-image"
+              onClick={openFilePicker}
+              aria-label="Upload product image"
+            >
+              <span>{uploading ? 'Uploading...' : 'Click to upload image'}</span>
+            </button>
           )}
 
           {uploadError ? <div className="error-banner">{uploadError}</div> : null}
 
           <div className="product-image-actions">
-            <label className="ghost-btn image-upload-btn">
+            <button
+              type="button"
+              className="primary-btn small-btn"
+              onClick={openFilePicker}
+              disabled={uploading}
+            >
               {uploading ? 'Uploading...' : form.imageUrl ? 'Change Image' : 'Upload Image'}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleImagePick}
-                disabled={uploading}
-                hidden
-              />
-            </label>
+            </button>
 
             {form.imageUrl ? (
               <button

@@ -44,6 +44,7 @@ export default function SalesOrderFormPage({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
+  const [customerSuccess, setCustomerSuccess] = useState('')
 
   const status = order?.status || 'DRAFT'
   const isDraft = status === 'DRAFT'
@@ -193,6 +194,8 @@ export default function SalesOrderFormPage({
       customerId: String(created.id),
       customerAddress: created.address || '',
     })
+    setCustomerSuccess(`Customer "${created.name}" added and selected.`)
+    setTimeout(() => setCustomerSuccess(''), 4000)
   }
 
   return (
@@ -201,6 +204,7 @@ export default function SalesOrderFormPage({
       onSignOut={onSignOut}
       onNavigate={onNavigate}
       currentModule="sales-orders"
+      pageTitle={order?.reference || 'New Sales Order'}
     >
       <div className="form-toolbar">
         <div className="form-toolbar-left">
@@ -266,6 +270,7 @@ export default function SalesOrderFormPage({
           <div className="so-status">Status: {status.replaceAll('_', ' ')}</div>
         </div>
 
+        {customerSuccess ? <div className="success-banner">{customerSuccess}</div> : null}
         {error ? <div className="error-banner">{error}</div> : null}
         {loading ? (
           <p className="muted">Loading...</p>
@@ -291,7 +296,7 @@ export default function SalesOrderFormPage({
                   {!readonly ? (
                     <button
                       type="button"
-                      className="ghost-btn"
+                      className="primary-btn small-btn"
                       onClick={() => setCustomerModalOpen(true)}
                     >
                       + Add Customer

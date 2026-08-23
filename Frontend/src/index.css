@@ -736,3 +736,246 @@ body {
   display: inline-flex;
   align-items: center;
 }
+
+/* --- Figma ERP layout (sidebar + topbar) --- */
+:root {
+  --sidebar-width: 260px;
+  --gradient-primary: linear-gradient(135deg, #0e8a7d 0%, #6366f1 100%);
+  --page-bg: #f1f5f9;
+}
+
+.primary-btn {
+  background: var(--gradient-primary);
+}
+
+.primary-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.erp-layout {
+  display: flex;
+  min-height: 100svh;
+  background: var(--page-bg);
+}
+
+.erp-sidebar {
+  width: var(--sidebar-width);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  padding: 20px 16px;
+  flex-shrink: 0;
+}
+
+.erp-main-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.erp-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-user strong {
+  display: block;
+  font-size: 13px;
+}
+
+.topbar-user span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.sidebar-brand strong {
+  display: block;
+  font-size: 13px;
+  color: var(--brand);
+}
+
+.sidebar-brand span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+.sidebar-link:hover {
+  background: #f8fafc;
+}
+
+.sidebar-link.active {
+  background: var(--gradient-primary);
+  color: #fff;
+}
+
+.sidebar-icon {
+  width: 20px;
+  text-align: center;
+}
+
+.dashboard-welcome {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.stat-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.stat-card-title {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.stat-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 700;
+}
+
+.stat-card-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--brand);
+}
+
+.stat-card-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hidden-file-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.clickable-image {
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  background: transparent;
+}
+
+.image-placeholder.clickable-image:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.modal-overlay {
+  z-index: 100;
+}
+
+.mobile-menu-btn {
+  display: none;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .erp-sidebar {
+    display: none;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
+  .mobile-drawer {
+    width: 280px;
+    height: 100%;
+    background: #fff;
+    padding: 20px;
+  }
+}

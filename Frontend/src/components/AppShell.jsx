@@ -7,49 +7,78 @@ export default function AppShell({
   onSignOut,
   onNavigate,
   currentModule,
+  pageTitle = 'Dashboard',
   children,
 }) {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="erp-app">
-      <header className="erp-header">
-        <div className="erp-header-left">
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label="Menu"
-            onClick={() => setMenuOpen(true)}
-          >
-            ☰
-          </button>
-        </div>
-
-        <div className="erp-header-center">
+    <div className="erp-layout">
+      <aside className="erp-sidebar">
+        <div className="sidebar-brand">
           <img src={logo} alt="" className="erp-logo" />
           <div>
-            <strong>SHIV FURNITURE WORKS</strong>
-            <span>Mini ERP</span>
+            <strong>SHIV FURNITURE</strong>
+            <span>Mini ERP Portal</span>
           </div>
         </div>
 
-        <div className="erp-header-right">
-          <span className="user-pill">{session.loginId}</span>
-          <button type="button" className="ghost-btn" onClick={onSignOut}>
-            Sign out
-          </button>
+        <MasterMenu
+          session={session}
+          current={currentModule}
+          onNavigate={onNavigate}
+        />
+      </aside>
+
+      {mobileMenuOpen ? (
+        <div className="menu-overlay mobile-only" onClick={() => setMobileMenuOpen(false)}>
+          <aside className="master-menu mobile-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="sidebar-brand">
+              <img src={logo} alt="" className="erp-logo" />
+              <div>
+                <strong>SHIV FURNITURE</strong>
+                <span>Mini ERP Portal</span>
+              </div>
+            </div>
+            <MasterMenu
+              session={session}
+              current={currentModule}
+              onNavigate={(key) => {
+                onNavigate(key)
+                setMobileMenuOpen(false)
+              }}
+            />
+          </aside>
         </div>
-      </header>
+      ) : null}
 
-      <MasterMenu
-        open={menuOpen}
-        session={session}
-        current={currentModule}
-        onNavigate={onNavigate}
-        onClose={() => setMenuOpen(false)}
-      />
+      <div className="erp-main-column">
+        <header className="erp-topbar">
+          <button
+            type="button"
+            className="icon-btn mobile-menu-btn"
+            aria-label="Menu"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            ☰
+          </button>
 
-      <main className="erp-main">{children}</main>
+          <h1 className="topbar-title">{pageTitle}</h1>
+
+          <div className="topbar-right">
+            <div className="user-avatar">{session.loginId?.slice(0, 2).toUpperCase()}</div>
+            <div className="topbar-user">
+              <strong>{session.loginId}</strong>
+              <span>{session.userType?.replaceAll('_', ' ')}</span>
+            </div>
+            <button type="button" className="ghost-btn" onClick={onSignOut}>
+              Sign out
+            </button>
+          </div>
+        </header>
+
+        <main className="erp-main">{children}</main>
+      </div>
     </div>
   )
 }

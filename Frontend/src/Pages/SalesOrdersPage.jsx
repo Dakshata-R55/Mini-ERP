@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
+import CustomerFormModal from '../components/CustomerFormModal'
 import { listSalesOrders } from '../api/salesOrders'
 
 const STATUS_LABELS = {
@@ -35,6 +36,8 @@ export default function SalesOrdersPage({
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [customerModalOpen, setCustomerModalOpen] = useState(false)
+  const [customerSuccess, setCustomerSuccess] = useState('')
 
   useEffect(() => {
     loadOrders()
@@ -53,16 +56,29 @@ export default function SalesOrdersPage({
     }
   }
 
+  function handleCustomerCreated(created) {
+    setCustomerSuccess(`Customer "${created.name}" added successfully.`)
+    setTimeout(() => setCustomerSuccess(''), 4000)
+  }
+
   return (
     <AppShell
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
       currentModule="sales-orders"
+      pageTitle="Sales Orders"
     >
       <div className="page-toolbar">
         <button type="button" className="primary-btn small-btn" onClick={onCreate}>
           + New Sales Order
+        </button>
+        <button
+          type="button"
+          className="ghost-btn"
+          onClick={() => setCustomerModalOpen(true)}
+        >
+          + Add Customer
         </button>
         <h2>Sales Orders</h2>
 
@@ -90,6 +106,7 @@ export default function SalesOrdersPage({
         </div>
       </div>
 
+      {customerSuccess ? <div className="success-banner">{customerSuccess}</div> : null}
       {error ? <div className="error-banner">{error}</div> : null}
 
       {loading ? (
@@ -161,6 +178,12 @@ export default function SalesOrdersPage({
           ))}
         </div>
       )}
+
+      <CustomerFormModal
+        open={customerModalOpen}
+        onClose={() => setCustomerModalOpen(false)}
+        onCreated={handleCustomerCreated}
+      />
     </AppShell>
   )
 }
