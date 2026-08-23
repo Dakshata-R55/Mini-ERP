@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtTokenProvider {
@@ -23,18 +25,28 @@ public class JwtTokenProvider {
         this.expirationMs = expirationMs;
     }
 
-    public String generateToken(String loginId) {
+    public TokenDetails generateTokenDetails(String loginId) {
+        String jti = UUID.randomUUID().toString();
         Date now = new Date();
-        return Jwts.builder()
+        Date expiresAt = new Date(now.getTime() + expirationMs);
+
+        String token = Jwts.builder()
+                .id(jti)
                 .subject(loginId)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + expirationMs))
+                .expiration(expiresAt)
                 .signWith(key)
                 .compact();
+
+        return new TokenDetails(token, jti, expiresAt.toInstant());
     }
 
     public String getLoginId(String token) {
         return parseClaims(token).getSubject();
+    }
+
+    public String getJti(String token) {
+        return parseClaims(token).getId();
     }
 
     public boolean isValid(String token) {

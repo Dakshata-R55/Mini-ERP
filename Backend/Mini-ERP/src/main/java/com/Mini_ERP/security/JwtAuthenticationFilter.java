@@ -1,5 +1,6 @@
 package com.Mini_ERP.security;
 
+import com.Mini_ERP.service.TokenSessionService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsServiceImpl userDetailsService;
+    private final TokenSessionService tokenSessionService;
 
     @Override
     protected void doFilterInternal(
@@ -33,6 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = header.substring(7).trim();
 
             if (jwtTokenProvider.isValid(token)
+                    && tokenSessionService.isActive(jwtTokenProvider.getJti(token))
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 String loginId = jwtTokenProvider.getLoginId(token);

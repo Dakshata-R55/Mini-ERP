@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import LoginPage from './Pages/LoginPage'
 import SignupPage from './Pages/SignupPage'
 import ProductsPage from './Pages/ProductsPage'
@@ -11,7 +11,8 @@ import PurchaseOrdersPage from './Pages/PurchaseOrdersPage'
 import PurchaseOrderFormPage from './Pages/PurchaseOrderFormPage'
 import PurchaseOrderLogsPage from './Pages/PurchaseOrderLogsPage'
 import UserManagementPage from './Pages/UserManagementPage'
-import { clearToken } from './api/client'
+import { logout, fetchCurrentUser } from './api/auth'
+import { getToken, clearToken } from './api/client'
 
 function homeScreenFor(userType) {
   if (userType === 'SYSTEM_ADMIN') return 'users'
@@ -22,6 +23,7 @@ function homeScreenFor(userType) {
 }
 
 export default function App() {
+  const [booting, setBooting] = useState(true)
   const [screen, setScreen] = useState('login')
   const [loginMode, setLoginMode] = useState('user')
   const [session, setSession] = useState(null)
@@ -29,13 +31,36 @@ export default function App() {
   const [selectedSalesOrderId, setSelectedSalesOrderId] = useState(null)
   const [selectedPurchaseOrderId, setSelectedPurchaseOrderId] = useState(null)
 
+  useEffect(() => {
+    async function restoreSession() {
+      if (!getToken()) {
+        setBooting(false)
+        return
+      }
+
+      try {
+        const data = await fetchCurrentUser()
+        setSession(data)
+        setScreen(homeScreenFor(data.userType))
+      } catch {
+        clearToken()
+        setSession(null)
+        setScreen('login')
+      } finally {
+        setBooting(false)
+      }
+    }
+
+    restoreSession()
+  }, [])
+
   function handleSuccess(data) {
     setSession(data)
     setScreen(homeScreenFor(data.userType))
   }
 
-  function handleSignOut() {
-    clearToken()
+  async function handleSignOut() {
+    await logout()
     setSession(null)
     setSelectedProductId(null)
     setSelectedSalesOrderId(null)
@@ -49,6 +74,16 @@ export default function App() {
     if (module === 'purchase-orders') setScreen('purchase-orders')
     if (module === 'products') setScreen('products')
     if (module === 'users') setScreen('users')
+  }
+
+  if (booting) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card coming-soon">
+          <p className="auth-subtitle">Loading session...</p>
+        </div>
+      </div>
+    )
   }
 
   if (screen === 'signup') {

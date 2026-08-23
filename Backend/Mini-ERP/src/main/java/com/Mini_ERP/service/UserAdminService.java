@@ -18,6 +18,7 @@ public class UserAdminService {
 
     private final UserRepository userRepository;
     private final RolePermissionCatalog rolePermissionCatalog;
+    private final TokenSessionService tokenSessionService;
 
     public List<UserSummaryResponse> listUsers() {
         return userRepository.findAll().stream()
@@ -39,9 +40,10 @@ public class UserAdminService {
         }
 
         rolePermissionCatalog.apply(user, userType);
-        userRepository.save(user);
+        AppUser saved = userRepository.save(user);
+        tokenSessionService.revokeAllForUser(saved.getId());
 
-        return toSummary(user);
+        return toSummary(saved);
     }
 
     private UserSummaryResponse toSummary(AppUser user) {

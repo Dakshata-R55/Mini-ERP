@@ -1,6 +1,8 @@
 package com.Mini_ERP.service;
 
 import com.Mini_ERP.model.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumMap;
@@ -9,8 +11,12 @@ import java.util.Map;
 @Component
 public class RolePermissionCatalog {
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public void apply(AppUser user, UserType type) {
         user.getModulePermissions().clear();
+        entityManager.flush();
         user.setUserType(type);
 
         // System Admin: user-role management only — no Sales/Purchase/Products/etc.
