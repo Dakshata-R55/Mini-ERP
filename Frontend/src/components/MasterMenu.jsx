@@ -1,9 +1,13 @@
 export default function MasterMenu({ session, current, onNavigate }) {
   const items = [
-    { key: 'dashboard', label: 'Dashboard', icon: '▣', roles: ['ADMIN', 'PROJECT_MANAGER', 'SALES_USER', 'PURCHASE_USER'] },
+    { key: 'dashboard', label: 'Dashboard', icon: '▣', roles: ['ADMIN', 'PROJECT_MANAGER', 'SALES_USER', 'PURCHASE_USER', 'MANUFACTURING_USER'] },
     { key: 'sales-orders', label: 'Sale Orders', icon: '◎', roles: ['SALES_USER', 'ADMIN'] },
     { key: 'purchase-orders', label: 'Purchase Orders', icon: '◫', roles: ['PURCHASE_USER', 'ADMIN'] },
+    { key: 'manufacturing-orders', label: 'Manufacturing', icon: '⚙', roles: ['MANUFACTURING_USER', 'ADMIN', 'PROJECT_MANAGER'] },
+    { key: 'boms', label: 'Bills of Materials', icon: '⊞', roles: ['MANUFACTURING_USER', 'ADMIN', 'PROJECT_MANAGER'] },
+    { key: 'work-centers', label: 'Work Centers', icon: '⌂', roles: ['MANUFACTURING_USER', 'ADMIN', 'PROJECT_MANAGER'] },
     { key: 'products', label: 'Products', icon: '▤', roles: ['ADMIN', 'PROJECT_MANAGER'] },
+    { key: 'stock-ledger', label: 'Stock Ledger', icon: '₹', roles: ['ADMIN', 'PROJECT_MANAGER', 'PURCHASE_USER', 'MANUFACTURING_USER'] },
     { key: 'users', label: 'User Management', icon: '◉', roles: ['SYSTEM_ADMIN'] },
   ]
 

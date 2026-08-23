@@ -11,6 +11,12 @@ import SalesOrderLogsPage from './Pages/SalesOrderLogsPage'
 import PurchaseOrdersPage from './Pages/PurchaseOrdersPage'
 import PurchaseOrderFormPage from './Pages/PurchaseOrderFormPage'
 import PurchaseOrderLogsPage from './Pages/PurchaseOrderLogsPage'
+import StockLedgerPage from './Pages/StockLedgerPage'
+import WorkCentersPage from './Pages/WorkCentersPage'
+import BomsPage from './Pages/BomsPage'
+import BomFormPage from './Pages/BomFormPage'
+import ManufacturingOrdersPage from './Pages/ManufacturingOrdersPage'
+import ManufacturingOrderFormPage from './Pages/ManufacturingOrderFormPage'
 import UserManagementPage from './Pages/UserManagementPage'
 import { logout, fetchCurrentUser } from './api/auth'
 import { getToken, clearToken } from './api/client'
@@ -19,6 +25,7 @@ function homeScreenFor(userType) {
   if (userType === 'SYSTEM_ADMIN') return 'users'
   if (userType === 'SALES_USER') return 'dashboard'
   if (userType === 'PURCHASE_USER') return 'dashboard'
+  if (userType === 'MANUFACTURING_USER') return 'dashboard'
   if (userType === 'ADMIN' || userType === 'PROJECT_MANAGER') return 'dashboard'
   return 'no-access'
 }
@@ -31,6 +38,8 @@ export default function App() {
   const [selectedProductId, setSelectedProductId] = useState(null)
   const [selectedSalesOrderId, setSelectedSalesOrderId] = useState(null)
   const [selectedPurchaseOrderId, setSelectedPurchaseOrderId] = useState(null)
+  const [selectedBomId, setSelectedBomId] = useState(null)
+  const [selectedMoId, setSelectedMoId] = useState(null)
 
   useEffect(() => {
     async function restoreSession() {
@@ -66,6 +75,8 @@ export default function App() {
     setSelectedProductId(null)
     setSelectedSalesOrderId(null)
     setSelectedPurchaseOrderId(null)
+    setSelectedBomId(null)
+    setSelectedMoId(null)
     setScreen('login')
     setLoginMode('user')
   }
@@ -75,6 +86,10 @@ export default function App() {
     if (module === 'sales-orders') setScreen('sales-orders')
     if (module === 'purchase-orders') setScreen('purchase-orders')
     if (module === 'products') setScreen('products')
+    if (module === 'stock-ledger') setScreen('stock-ledger')
+    if (module === 'work-centers') setScreen('work-centers')
+    if (module === 'boms') setScreen('boms')
+    if (module === 'manufacturing-orders') setScreen('manufacturing-orders')
     if (module === 'users') setScreen('users')
   }
 
@@ -119,6 +134,92 @@ export default function App() {
         session={session}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+      />
+    )
+  }
+
+  if (session && screen === 'stock-ledger') {
+    return (
+      <StockLedgerPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+      />
+    )
+  }
+
+  if (session && screen === 'work-centers') {
+    return (
+      <WorkCentersPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+      />
+    )
+  }
+
+  if (session && screen === 'boms') {
+    return (
+      <BomsPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+        onCreate={() => {
+          setSelectedBomId(null)
+          setScreen('bom-form')
+        }}
+        onOpenBom={(id) => {
+          setSelectedBomId(id)
+          setScreen('bom-form')
+        }}
+      />
+    )
+  }
+
+  if (session && screen === 'bom-form') {
+    return (
+      <BomFormPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+        bomId={selectedBomId}
+        onBack={(newId) => {
+          if (newId) setSelectedBomId(newId)
+          setScreen(newId ? 'bom-form' : 'boms')
+        }}
+      />
+    )
+  }
+
+  if (session && screen === 'manufacturing-orders') {
+    return (
+      <ManufacturingOrdersPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+        onCreate={() => {
+          setSelectedMoId(null)
+          setScreen('manufacturing-order-form')
+        }}
+        onOpenOrder={(id) => {
+          setSelectedMoId(id)
+          setScreen('manufacturing-order-form')
+        }}
+      />
+    )
+  }
+
+  if (session && screen === 'manufacturing-order-form') {
+    return (
+      <ManufacturingOrderFormPage
+        session={session}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+        orderId={selectedMoId}
+        onBack={(newId) => {
+          if (newId) setSelectedMoId(newId)
+          setScreen(newId ? 'manufacturing-order-form' : 'manufacturing-orders')
+        }}
       />
     )
   }
