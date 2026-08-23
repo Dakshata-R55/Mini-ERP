@@ -1,0 +1,10 @@
+package com.Mini_ERP.model;
+
+public enum StockMovementType {
+    PURCHASE_RECEIVE,
+    PURCHASE_REVERSE,
+    MANUFACTURING_PRODUCE,
+    MANUFACTURING_CONSUME,
+    SALES_DELIVER,
+    MANUAL_ADJUSTMENT
+}

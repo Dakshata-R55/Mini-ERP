@@ -30,6 +30,8 @@ public class SalesOrderService {
     private final UserRepository userRepository;
     private final SalesOrderReferenceGenerator referenceGenerator;
     private final AuditLogService auditLogService;
+    private final InventoryService inventoryService;
+    private final ProcurementOrchestrationService procurementOrchestrationService;
 
     public List<SalesOrderListResponse> listOrders(String status, Boolean late, String search) {
         SalesOrderStatus statusFilter = parseStatus(status);
@@ -110,7 +112,9 @@ public class SalesOrderService {
 
         auditLogService.logChange(ErpModule.SALES, saved.getId(), saved.getReference(),
                 AuditAction.UPDATE, "status", before, saved.getStatus(), currentUsername());
-        return toResponse(saved);
+
+        procurementOrchestrationService.handleSalesShortages(saved);
+        return toResponse(findWithDetails(saved.getId()));
     }
 
     @Transactional
@@ -141,11 +145,13 @@ public class SalesOrderService {
             BigDecimal delta = newDelivered.subtract(line.getDeliveredQty());
             if (delta.compareTo(BigDecimal.ZERO) > 0) {
                 Product product = line.getProduct();
-                if (product.getOnHandQty().compareTo(delta) < 0) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "Insufficient on-hand stock for product " + product.getReference());
-                }
-                product.setOnHandQty(product.getOnHandQty().subtract(delta));
+                inventoryService.adjustOnHand(
+                        product.getId(),
+                        delta.negate(),
+                        ErpModule.SALES,
+                        StockMovementType.SALES_DELIVER,
+                        order.getReference(),
+                        order.getId());
                 product.setReservedQty(product.getReservedQty().subtract(delta));
                 productRepository.save(product);
                 line.setDeliveredQty(newDelivered);
@@ -205,6 +211,13 @@ public class SalesOrderService {
                             .filter(Product::isActive)
                             .orElseThrow(() -> new ResponseStatusException(
                                     HttpStatus.BAD_REQUEST, "Product not found: " + req.getProductId()));
+
+                    if (product.getProductType() != ProductType.FINISHED_GOOD) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Sales orders can only include finished goods. "
+                                        + product.getReference() + " is not a finished good.");
+                    }
 
                     BigDecimal unitPrice = req.getUnitPrice() != null
                             ? req.getUnitPrice()
