@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
+import VendorFormModal from '../components/VendorFormModal'
 import { listPurchaseOrders } from '../api/purchaseOrders'
 
 const STATUS_LABELS = {
@@ -26,6 +27,8 @@ export default function PurchaseOrdersPage({
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [vendorModalOpen, setVendorModalOpen] = useState(false)
+  const [vendorSuccess, setVendorSuccess] = useState('')
 
   useEffect(() => {
     loadOrders()
@@ -44,16 +47,25 @@ export default function PurchaseOrdersPage({
     }
   }
 
+  function handleVendorCreated(created) {
+    setVendorSuccess(`Vendor "${created.name}" added successfully.`)
+    setTimeout(() => setVendorSuccess(''), 4000)
+  }
+
   return (
     <AppShell
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
       currentModule="purchase-orders"
+      pageTitle="Purchase Orders"
     >
       <div className="page-toolbar">
         <button type="button" className="primary-btn small-btn" onClick={onCreate}>
           + New Purchase Order
+        </button>
+        <button type="button" className="ghost-btn" onClick={() => setVendorModalOpen(true)}>
+          + Add Vendor
         </button>
         <h2>Purchase Orders</h2>
 
@@ -67,6 +79,7 @@ export default function PurchaseOrdersPage({
         </div>
       </div>
 
+      {vendorSuccess ? <div className="success-banner">{vendorSuccess}</div> : null}
       {error ? <div className="error-banner">{error}</div> : null}
 
       <div className="table-card">
@@ -113,6 +126,12 @@ export default function PurchaseOrdersPage({
           </table>
         )}
       </div>
+
+      <VendorFormModal
+        open={vendorModalOpen}
+        onClose={() => setVendorModalOpen(false)}
+        onCreated={handleVendorCreated}
+      />
     </AppShell>
   )
 }

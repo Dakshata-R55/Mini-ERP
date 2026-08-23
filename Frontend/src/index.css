@@ -979,3 +979,14 @@ body {
     padding: 20px;
   }
 }
+
+/* --- Purchase vendor row (same layout as customer row) --- */
+.vendor-field-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.vendor-field-row select {
+  flex: 1;
+}

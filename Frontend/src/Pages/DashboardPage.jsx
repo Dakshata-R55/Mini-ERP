@@ -4,6 +4,7 @@ import { listProducts } from '../api/products'
 import { listSalesOrders } from '../api/salesOrders'
 import { listPurchaseOrders } from '../api/purchaseOrders'
 import { listCustomers } from '../api/customers'
+import { listVendors } from '../api/vendors'
 
 function StatCard({ title, value, hint, badge }) {
   return (
@@ -54,6 +55,11 @@ export default function DashboardPage({ session, onSignOut, onNavigate }) {
         next.customers = customers.length
       } catch { /* no access */ }
 
+      try {
+        const vendors = await listVendors()
+        next.vendors = vendors.length
+      } catch { /* no access */ }   
+
       setStats(next)
       setLoading(false)
     }
@@ -93,6 +99,9 @@ export default function DashboardPage({ session, onSignOut, onNavigate }) {
           ) : null}
           {stats.customers !== null ? (
             <StatCard title="Customers" value={stats.customers} hint="Active customers" badge="Sales" />
+          ) : null}
+          {stats.vendors !== null ? (
+            <StatCard title="Vendors" value={stats.vendors} hint="Active vendors" badge="Purchase" />
           ) : null}
         </div>
       )}
