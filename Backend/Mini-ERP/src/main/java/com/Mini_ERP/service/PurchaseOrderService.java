@@ -32,16 +32,18 @@ public class PurchaseOrderService {
     private final AuditLogService auditLogService;
     private final InventoryService inventoryService;
 
-    public List<PurchaseOrderListResponse> listOrders(String status, Boolean late, String search) {
-        PurchaseOrderStatus statusFilter = parseStatus(status);
+   public List<PurchaseOrderListResponse> listOrders(String status, Boolean late, Boolean mine, String search) {
+    PurchaseOrderStatus statusFilter = parseStatus(status);
+    Long currentUserId = Boolean.TRUE.equals(mine) ? currentUserId() : null;
 
-        return purchaseOrderRepository.findAllActiveWithVendor().stream()
-                .filter(po -> statusFilter == null || po.getStatus() == statusFilter)
-                .filter(po -> late == null || !late || isLate(po))
-                .filter(po -> matchesSearch(po, search))
-                .map(this::toListResponse)
-                .toList();
-    }
+    return purchaseOrderRepository.findAllActiveWithVendor().stream()
+            .filter(po -> statusFilter == null || po.getStatus() == statusFilter)
+            .filter(po -> late == null || !late || isLate(po))
+            .filter(po -> currentUserId == null || belongsToResponsible(po, currentUserId))
+            .filter(po -> matchesSearch(po, search))
+            .map(this::toListResponse)
+            .toList();
+}
 
     public PurchaseOrderResponse getOrder(Long id) {
         return toResponse(findWithDetails(id));
@@ -257,6 +259,18 @@ public class PurchaseOrderService {
                 })
                 .toList();
     }
+
+private boolean belongsToResponsible(PurchaseOrder order, Long userId) {
+    return order.getResponsiblePerson() != null && order.getResponsiblePerson().getId().equals(userId);
+}
+
+private Long currentUserId() {
+    var auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
+        return details.getUser().getId();
+    }
+    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+}
 
     private void reverseReceivedStock(PurchaseOrder order) {
         for (PurchaseOrderLine line : order.getLines()) {

@@ -17,14 +17,15 @@ public class SalesOrderController {
 
     private final SalesOrderService salesOrderService;
 
-    @GetMapping
-    @RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.READ)
-    public List<SalesOrderListResponse> listOrders(
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) Boolean late,
-            @RequestParam(required = false) String search) {
-        return salesOrderService.listOrders(status, late, search);
-    }
+  @GetMapping
+@RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.READ)
+public List<SalesOrderListResponse> listOrders(
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) Boolean late,
+        @RequestParam(required = false) Boolean mine,
+        @RequestParam(required = false) String search) {
+    return salesOrderService.listOrders(status, late, mine, search);
+}
 
     @GetMapping("/{id}")
     @RequiresModuleAccess(module = ErpModule.SALES, action = RequiresModuleAccess.Action.READ)

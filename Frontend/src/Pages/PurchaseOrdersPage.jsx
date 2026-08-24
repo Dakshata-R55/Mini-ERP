@@ -23,6 +23,8 @@ export default function PurchaseOrdersPage({
   onOpenProfile,
   onCreate,
   onOpenOrder,
+  initialFilter,
+  onFilterApplied,
 }) {
   const [search, setSearch] = useState('')
   const [orders, setOrders] = useState([])
@@ -31,15 +33,32 @@ export default function PurchaseOrdersPage({
   const [vendorModalOpen, setVendorModalOpen] = useState(false)
   const [vendorSuccess, setVendorSuccess] = useState('')
 
+  const [statusFilter, setStatusFilter] = useState('')
+  const [lateFilter, setLateFilter] = useState(false)
+  const [mineFilter, setMineFilter] = useState(false)
+
+  useEffect(() => {
+    if (!initialFilter) return
+    setStatusFilter(initialFilter.status || '')
+    setLateFilter(Boolean(initialFilter.late))
+    setMineFilter(Boolean(initialFilter.mine))
+    onFilterApplied?.()
+  }, [initialFilter])
+
   useEffect(() => {
     loadOrders()
-  }, [search])
+  }, [search, statusFilter, lateFilter, mineFilter])
 
   async function loadOrders() {
     setLoading(true)
     setError('')
     try {
-      const data = await listPurchaseOrders({ search: search.trim() || undefined })
+      const data = await listPurchaseOrders({
+        search: search.trim() || undefined,
+        status: statusFilter || undefined,
+        late: lateFilter ? true : undefined,
+        mine: mineFilter ? true : undefined,
+      })
       setOrders(data)
     } catch (err) {
       setError(err.message || 'Failed to load purchase orders')
@@ -48,10 +67,18 @@ export default function PurchaseOrdersPage({
     }
   }
 
+  function clearFilters() {
+    setStatusFilter('')
+    setLateFilter(false)
+    setMineFilter(false)
+  }
+
   function handleVendorCreated(created) {
     setVendorSuccess(`Vendor "${created.name}" added successfully.`)
     setTimeout(() => setVendorSuccess(''), 4000)
   }
+
+  const hasFilters = statusFilter || lateFilter || mineFilter
 
   return (
     <AppShell
@@ -81,6 +108,20 @@ export default function PurchaseOrdersPage({
         </div>
       </div>
 
+      {hasFilters ? (
+        <div className="filter-banner">
+          <span>Filtered:</span>
+          {mineFilter ? <span className="filter-chip">My orders</span> : null}
+          {statusFilter ? (
+            <span className="filter-chip">{STATUS_LABELS[statusFilter] || statusFilter}</span>
+          ) : null}
+          {lateFilter ? <span className="filter-chip">Late</span> : null}
+          <button type="button" className="ghost-btn small-btn" onClick={clearFilters}>
+            Clear
+          </button>
+        </div>
+      ) : null}
+
       {vendorSuccess ? <div className="success-banner">{vendorSuccess}</div> : null}
       {error ? <div className="error-banner">{error}</div> : null}
 
@@ -103,7 +144,7 @@ export default function PurchaseOrdersPage({
               {orders.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="center-pad muted">
-                    No purchase orders yet.
+                    No purchase orders found.
                   </td>
                 </tr>
               ) : (

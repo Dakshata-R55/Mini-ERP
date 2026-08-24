@@ -9,6 +9,15 @@ import java.util.Optional;
 
 public interface ManufacturingOrderRepository extends JpaRepository<ManufacturingOrder, Long> {
 
+    @Query("""
+        SELECT m FROM ManufacturingOrder m
+        JOIN FETCH m.finishedProduct
+        LEFT JOIN FETCH m.assignee
+        WHERE m.active = true
+        ORDER BY m.id DESC
+        """)
+List<ManufacturingOrder> findAllActiveWithAssignee();
+
     @Query("SELECT m FROM ManufacturingOrder m JOIN FETCH m.finishedProduct WHERE m.active = true ORDER BY m.id DESC")
     List<ManufacturingOrder> findAllActiveWithProduct();
 

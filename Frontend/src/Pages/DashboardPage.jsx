@@ -1,78 +1,98 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
-import { listProducts } from '../api/products'
-import { listSalesOrders } from '../api/salesOrders'
-import { listPurchaseOrders } from '../api/purchaseOrders'
-import { listCustomers } from '../api/customers'
-import { listVendors } from '../api/vendors'
+import DashboardOrderSection from '../components/DashboardOrderSection'
+import { getDashboardSummary } from '../api/dashboard'
 
-function StatCard({ title, value, hint, badge }) {
-  return (
-    <div className="stat-card">
-      <div className="stat-card-top">
-        <span className="stat-card-title">{title}</span>
-        {badge ? <span className="stat-badge">{badge}</span> : null}
-      </div>
-      <div className="stat-card-value">{value}</div>
-      {hint ? <div className="stat-card-hint">{hint}</div> : null}
-    </div>
-  )
-}
+const SALES_ALL_PILLS = [
+  { key: 'draft', field: 'draft', label: 'Draft', filter: { status: 'DRAFT' } },
+  { key: 'confirmed', field: 'confirmed', label: 'Confirmed', filter: { status: 'CONFIRMED' } },
+  { key: 'partial', field: 'partial', label: 'Partially Delivered', filter: { status: 'PARTIALLY_DELIVERED' } },
+  { key: 'completed', field: 'completed', label: 'Delivered', filter: { status: 'FULLY_DELIVERED' } },
+  { key: 'late', field: 'late', label: 'Late', filter: { late: true } },
+]
 
-export default function DashboardPage({ session, onSignOut, onNavigate, onOpenProfile }) {
-  const [stats, setStats] = useState({
-    products: null,
-    salesOrders: null,
-    purchaseOrders: null,
-    customers: null,
-    draftOrders: null,
-  })
+const SALES_MY_PILLS = [
+  { key: 'confirmed', field: 'confirmed', label: 'Confirmed', filter: { status: 'CONFIRMED' } },
+  { key: 'draft', field: 'draft', label: 'Draft', filter: { status: 'DRAFT' } },
+  { key: 'completed', field: 'completed', label: 'Delivered', filter: { status: 'FULLY_DELIVERED' } },
+]
+
+const PURCHASE_ALL_PILLS = [
+  { key: 'draft', field: 'draft', label: 'Draft', filter: { status: 'DRAFT' } },
+  { key: 'confirmed', field: 'confirmed', label: 'Confirmed', filter: { status: 'CONFIRMED' } },
+  { key: 'partial', field: 'partial', label: 'Partially Received', filter: { status: 'PARTIALLY_RECEIVED' } },
+  { key: 'completed', field: 'completed', label: 'Received', filter: { status: 'FULLY_RECEIVED' } },
+  { key: 'late', field: 'late', label: 'Late', filter: { late: true } },
+]
+
+const PURCHASE_MY_PILLS = [
+  { key: 'confirmed', field: 'confirmed', label: 'Confirmed', filter: { status: 'CONFIRMED' } },
+  { key: 'draft', field: 'draft', label: 'Draft', filter: { status: 'DRAFT' } },
+  { key: 'completed', field: 'completed', label: 'Received', filter: { status: 'FULLY_RECEIVED' } },
+]
+
+const MO_ALL_PILLS = [
+  { key: 'draft', field: 'draft', label: 'Draft', filter: { status: 'DRAFT' } },
+  { key: 'confirmed', field: 'confirmed', label: 'Confirmed', filter: { status: 'CONFIRMED' } },
+  { key: 'inProgress', field: 'inProgress', label: 'In Progress', filter: { status: 'IN_PROGRESS' } },
+  { key: 'toClose', field: 'toClose', label: 'To Close', filter: { status: 'TO_CLOSE' } },
+  { key: 'completed', field: 'completed', label: 'Done', filter: { status: 'DONE' } },
+]
+
+const MO_MY_PILLS = [
+  { key: 'confirmed', field: 'confirmed', label: 'Confirmed', filter: { status: 'CONFIRMED' } },
+  { key: 'inProgress', field: 'inProgress', label: 'In Progress', filter: { status: 'IN_PROGRESS' } },
+  { key: 'completed', field: 'completed', label: 'Done', filter: { status: 'DONE' } },
+]
+
+export default function DashboardPage({ session, onSignOut, onNavigate, onOpenOrders }) {
+  const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     async function load() {
       setLoading(true)
-      const next = { products: null, salesOrders: null, purchaseOrders: null, customers: null, draftOrders: null }
-
+      setError('')
       try {
-        const products = await listProducts()
-        next.products = products.length
-      } catch { /* no access */ }
-
-      try {
-        const orders = await listSalesOrders()
-        next.salesOrders = orders.length
-        next.draftOrders = orders.filter((o) => o.status === 'DRAFT').length
-      } catch { /* no access */ }
-
-      try {
-        const po = await listPurchaseOrders()
-        next.purchaseOrders = po.length
-      } catch { /* no access */ }
-
-      try {
-        const customers = await listCustomers()
-        next.customers = customers.length
-      } catch { /* no access */ }
-
-      try {
-        const vendors = await listVendors()
-        next.vendors = vendors.length
-      } catch { /* no access */ }   
-
-      setStats(next)
-      setLoading(false)
+        setSummary(await getDashboardSummary())
+      } catch (err) {
+        setError(err.message || 'Failed to load dashboard')
+      } finally {
+        setLoading(false)
+      }
     }
-
     load()
   }, [])
+
+  function handleSalesPill(filter) {
+    onOpenOrders('sales-orders', {
+      status: filter.status,
+      late: filter.late,
+      mine: filter.scope === 'mine',
+    })
+  }
+
+  function handlePurchasePill(filter) {
+    onOpenOrders('purchase-orders', {
+      status: filter.status,
+      late: filter.late,
+      mine: filter.scope === 'mine',
+    })
+  }
+
+  function handleMoPill(filter) {
+    onOpenOrders('manufacturing-orders', {
+      status: filter.status,
+      mine: filter.scope === 'mine',
+    })
+  }
 
   return (
     <AppShell
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
-      onOpenProfile={onOpenProfile}
       currentModule="dashboard"
       pageTitle="Dashboard"
     >
@@ -80,32 +100,50 @@ export default function DashboardPage({ session, onSignOut, onNavigate, onOpenPr
         Welcome back, <strong>{session.loginId}</strong>
       </p>
 
+      {error ? <div className="error-banner">{error}</div> : null}
+
       {loading ? (
         <p className="muted">Loading dashboard...</p>
       ) : (
-        <div className="dashboard-grid">
-          {stats.products !== null ? (
-            <StatCard title="Products" value={stats.products} hint="Total active products" />
-          ) : null}
-          {stats.salesOrders !== null ? (
-            <StatCard
-              title="Sales Orders"
-              value={stats.salesOrders}
-              hint={`${stats.draftOrders ?? 0} draft`}
-              badge="Sales"
+        <div className="dashboard-orders-stack">
+          {summary?.salesOrders ? (
+            <DashboardOrderSection
+              title="Sale Orders"
+              allStats={summary.salesOrders.all}
+              myStats={summary.salesOrders.mine}
+              allPills={SALES_ALL_PILLS}
+              myPills={SALES_MY_PILLS}
+              onPillClick={handleSalesPill}
             />
           ) : null}
-          {stats.purchaseOrders !== null ? (
-            <StatCard title="Purchase Orders" value={stats.purchaseOrders} hint="All purchase orders" badge="Purchase" />
+
+          {summary?.purchaseOrders ? (
+            <DashboardOrderSection
+              title="Purchase Orders"
+              allStats={summary.purchaseOrders.all}
+              myStats={summary.purchaseOrders.mine}
+              allPills={PURCHASE_ALL_PILLS}
+              myPills={PURCHASE_MY_PILLS}
+              onPillClick={handlePurchasePill}
+            />
           ) : null}
-          {stats.customers !== null ? (
-            <StatCard title="Customers" value={stats.customers} hint="Active customers" badge="Sales" />
-          ) : null}
-          {stats.vendors !== null ? (
-            <StatCard title="Vendors" value={stats.vendors} hint="Active vendors" badge="Purchase" />
+
+          {summary?.manufacturingOrders ? (
+            <DashboardOrderSection
+              title="Manufacturing Orders"
+              allStats={summary.manufacturingOrders.all}
+              myStats={summary.manufacturingOrders.mine}
+              allPills={MO_ALL_PILLS}
+              myPills={MO_MY_PILLS}
+              onPillClick={handleMoPill}
+            />
           ) : null}
         </div>
       )}
+
+      <p className="dashboard-search-hint muted">
+        Click a status pill to open the filtered order list. Use search on each list page.
+      </p>
     </AppShell>
   )
 }

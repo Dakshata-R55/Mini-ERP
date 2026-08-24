@@ -22,10 +22,13 @@ public class ManufacturingOrderController {
     private final ManufacturingOrderService manufacturingOrderService;
 
     @GetMapping
-    @RequiresModuleAccess(module = ErpModule.MANUFACTURING, action = RequiresModuleAccess.Action.READ)
-    public List<ManufacturingOrderListResponse> listOrders() {
-        return manufacturingOrderService.listOrders();
-    }
+@RequiresModuleAccess(module = ErpModule.MANUFACTURING, action = RequiresModuleAccess.Action.READ)
+public List<ManufacturingOrderListResponse> listOrders(
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) Boolean mine,
+        @RequestParam(required = false) String search) {
+    return manufacturingOrderService.listOrders(status, mine, search);
+}
 
     @GetMapping("/{id}")
     @RequiresModuleAccess(module = ErpModule.MANUFACTURING, action = RequiresModuleAccess.Action.READ)

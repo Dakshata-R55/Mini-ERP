@@ -18,26 +18,51 @@ export default function ManufacturingOrdersPage({
   onOpenProfile,
   onCreate,
   onOpenOrder,
+  initialFilter,
+  onFilterApplied,
 }) {
+  const [search, setSearch] = useState('')
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const [statusFilter, setStatusFilter] = useState('')
+  const [mineFilter, setMineFilter] = useState(false)
+
+  useEffect(() => {
+    if (!initialFilter) return
+    setStatusFilter(initialFilter.status || '')
+    setMineFilter(Boolean(initialFilter.mine))
+    onFilterApplied?.()
+  }, [initialFilter])
+
   useEffect(() => {
     loadOrders()
-  }, [])
+  }, [search, statusFilter, mineFilter])
 
   async function loadOrders() {
     setLoading(true)
     setError('')
     try {
-      setOrders(await listManufacturingOrders())
+      const data = await listManufacturingOrders({
+        search: search.trim() || undefined,
+        status: statusFilter || undefined,
+        mine: mineFilter ? true : undefined,
+      })
+      setOrders(data)
     } catch (err) {
       setError(err.message || 'Failed to load manufacturing orders')
     } finally {
       setLoading(false)
     }
   }
+
+  function clearFilters() {
+    setStatusFilter('')
+    setMineFilter(false)
+  }
+
+  const hasFilters = statusFilter || mineFilter
 
   return (
     <AppShell
@@ -53,7 +78,29 @@ export default function ManufacturingOrdersPage({
           + New Manufacturing Order
         </button>
         <h2>Manufacturing Orders</h2>
+
+        <div className="toolbar-right">
+          <input
+            className="search-input"
+            placeholder="Search reference or product"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
+
+      {hasFilters ? (
+        <div className="filter-banner">
+          <span>Filtered:</span>
+          {mineFilter ? <span className="filter-chip">My orders</span> : null}
+          {statusFilter ? (
+            <span className="filter-chip">{STATUS_LABELS[statusFilter] || statusFilter}</span>
+          ) : null}
+          <button type="button" className="ghost-btn small-btn" onClick={clearFilters}>
+            Clear
+          </button>
+        </div>
+      ) : null}
 
       {error ? <div className="error-banner">{error}</div> : null}
 
@@ -74,7 +121,7 @@ export default function ManufacturingOrdersPage({
             <tbody>
               {orders.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="center-pad muted">No manufacturing orders yet.</td>
+                  <td colSpan="5" className="center-pad muted">No manufacturing orders found.</td>
                 </tr>
               ) : (
                 orders.map((order) => (

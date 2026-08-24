@@ -2,10 +2,11 @@ import { apiFetch } from './client'
 
 const BASE = '/api/purchase-orders'
 
-export function listPurchaseOrders({ status, late, search } = {}) {
+export function listPurchaseOrders({ status, late, mine, search } = {}) {
   const params = new URLSearchParams()
   if (status) params.set('status', status)
   if (late != null) params.set('late', String(late))
+  if (mine != null) params.set('mine', String(mine))
   if (search) params.set('search', search)
 
   const query = params.toString()

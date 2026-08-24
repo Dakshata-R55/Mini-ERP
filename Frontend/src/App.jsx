@@ -46,6 +46,7 @@ export default function App() {
   const [selectedUserId, setSelectedUserId] = useState(null)
   const [profileAvatar, setProfileAvatar] = useState(null)
   const [profileReturnScreen, setProfileReturnScreen] = useState('dashboard')
+  const [orderListFilter, setOrderListFilter] = useState(null)
 
   async function loadProfileAvatar() {
     try {
@@ -72,6 +73,11 @@ export default function App() {
 
   function handleProfileUpdated(profile) {
     setProfileAvatar(profile.avatarUrl || null)
+  }
+
+  function handleOpenOrdersFromDashboard(module, filter) {
+    setOrderListFilter(filter)
+    handleNavigate(module)
   }
 
   useEffect(() => {
@@ -171,7 +177,7 @@ export default function App() {
         session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
-        onOpenProfile={handleOpenProfile}
+        onOpenOrders={handleOpenOrdersFromDashboard}
       />
     )
   }
@@ -240,6 +246,8 @@ export default function App() {
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
         onOpenProfile={handleOpenProfile}
+        initialFilter={orderListFilter}
+        onFilterApplied={() => setOrderListFilter(null)}
         onCreate={() => {
           setSelectedMoId(null)
           setScreen('manufacturing-order-form')
@@ -315,6 +323,8 @@ export default function App() {
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
         onOpenProfile={handleOpenProfile}
+        initialFilter={orderListFilter}
+        onFilterApplied={() => setOrderListFilter(null)}
         onCreate={() => {
           setSelectedPurchaseOrderId(null)
           setScreen('purchase-order-form')
@@ -368,6 +378,8 @@ export default function App() {
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
         onOpenProfile={handleOpenProfile}
+        initialFilter={orderListFilter}
+        onFilterApplied={() => setOrderListFilter(null)}
         onCreate={() => {
           setSelectedSalesOrderId(null)
           setScreen('sales-order-form')

@@ -33,16 +33,18 @@ public class SalesOrderService {
     private final InventoryService inventoryService;
     private final ProcurementOrchestrationService procurementOrchestrationService;
 
-    public List<SalesOrderListResponse> listOrders(String status, Boolean late, String search) {
-        SalesOrderStatus statusFilter = parseStatus(status);
+   public List<SalesOrderListResponse> listOrders(String status, Boolean late, Boolean mine, String search) {
+    SalesOrderStatus statusFilter = parseStatus(status);
+    Long currentUserId = Boolean.TRUE.equals(mine) ? currentUserId() : null;
 
-        return salesOrderRepository.findAllActiveWithCustomer().stream()
-                .filter(so -> statusFilter == null || so.getStatus() == statusFilter)
-                .filter(so -> late == null || !late || isLate(so))
-                .filter(so -> matchesSearch(so, search))
-                .map(this::toListResponse)
-                .toList();
-    }
+    return salesOrderRepository.findAllActiveWithCustomer().stream()
+            .filter(so -> statusFilter == null || so.getStatus() == statusFilter)
+            .filter(so -> late == null || !late || isLate(so))
+            .filter(so -> currentUserId == null || belongsToSalesPerson(so, currentUserId))
+            .filter(so -> matchesSearch(so, search))
+            .map(this::toListResponse)
+            .toList();
+}
 
     public SalesOrderResponse getOrder(Long id) {
         return toResponse(findWithDetails(id));
@@ -235,6 +237,18 @@ public class SalesOrderService {
                 })
                 .toList();
     }
+
+    private boolean belongsToSalesPerson(SalesOrder order, Long userId) {
+    return order.getSalesPerson() != null && order.getSalesPerson().getId().equals(userId);
+}
+
+private Long currentUserId() {
+    var auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
+        return details.getUser().getId();
+    }
+    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+}
 
     private void releaseReservations(SalesOrder order) {
         for (SalesOrderLine line : order.getLines()) {

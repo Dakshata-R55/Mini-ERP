@@ -17,15 +17,15 @@ public class PurchaseOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
 
-    @GetMapping
-    @RequiresModuleAccess(module = ErpModule.PURCHASE, action = RequiresModuleAccess.Action.READ)
-    public List<PurchaseOrderListResponse> listOrders(
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) Boolean late,
-            @RequestParam(required = false) String search) {
-        return purchaseOrderService.listOrders(status, late, search);
-    }
-
+@GetMapping
+@RequiresModuleAccess(module = ErpModule.PURCHASE, action = RequiresModuleAccess.Action.READ)
+public List<PurchaseOrderListResponse> listOrders(
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) Boolean late,
+        @RequestParam(required = false) Boolean mine,
+        @RequestParam(required = false) String search) {
+    return purchaseOrderService.listOrders(status, late, mine, search);
+}
     @GetMapping("/{id}")
     @RequiresModuleAccess(module = ErpModule.PURCHASE, action = RequiresModuleAccess.Action.READ)
     public PurchaseOrderResponse getOrder(@PathVariable Long id) {

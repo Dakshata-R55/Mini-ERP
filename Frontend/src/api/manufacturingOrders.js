@@ -2,8 +2,15 @@ import { apiFetch } from './client'
 
 const BASE = '/api/manufacturing-orders'
 
-export function listManufacturingOrders() {
-  return apiFetch(BASE)
+export function listManufacturingOrders({ status, mine, search } = {}) {
+  const params = new URLSearchParams()
+  if (status) params.set('status', status)
+  if (mine != null) params.set('mine', String(mine))
+  if (search) params.set('search', search)
+
+  const query = params.toString()
+  return apiFetch(query ? `${BASE}?${query}` : BASE)
+  
 }
 
 export function getManufacturingOrder(id) {

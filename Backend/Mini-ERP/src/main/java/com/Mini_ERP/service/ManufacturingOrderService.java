@@ -31,11 +31,49 @@ public class ManufacturingOrderService {
     private final InventoryService inventoryService;
     private final AuditLogService auditLogService;
 
-    public List<ManufacturingOrderListResponse> listOrders() {
-        return manufacturingOrderRepository.findAllActiveWithProduct().stream()
-                .map(this::toListResponse)
-                .toList();
+   public List<ManufacturingOrderListResponse> listOrders(String status, Boolean mine, String search) {
+    ManufacturingOrderStatus statusFilter = parseStatus(status);
+    Long currentUserId = Boolean.TRUE.equals(mine) ? currentUserId() : null;
+
+    return manufacturingOrderRepository.findAllActiveWithAssignee().stream()
+            .filter(mo -> statusFilter == null || mo.getStatus() == statusFilter)
+            .filter(mo -> currentUserId == null || belongsToAssignee(mo, currentUserId))
+            .filter(mo -> matchesSearch(mo, search))
+            .map(this::toListResponse)
+            .toList();
+}
+
+private ManufacturingOrderStatus parseStatus(String status) {
+    if (status == null || status.isBlank()) {
+        return null;
     }
+    try {
+        return ManufacturingOrderStatus.valueOf(status.trim().toUpperCase());
+    } catch (IllegalArgumentException ex) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status: " + status);
+    }
+}
+
+private boolean belongsToAssignee(ManufacturingOrder order, Long userId) {
+    return order.getAssignee() != null && order.getAssignee().getId().equals(userId);
+}
+
+private boolean matchesSearch(ManufacturingOrder order, String search) {
+    if (search == null || search.isBlank()) {
+        return true;
+    }
+    String q = search.trim().toLowerCase();
+    return order.getReference().toLowerCase().contains(q)
+            || order.getFinishedProduct().getName().toLowerCase().contains(q);
+}
+
+private Long currentUserId() {
+    var auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
+        return details.getUser().getId();
+    }
+    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+}
 
     public ManufacturingOrderResponse getOrder(Long id) {
         return toResponse(findWithDetails(id));
