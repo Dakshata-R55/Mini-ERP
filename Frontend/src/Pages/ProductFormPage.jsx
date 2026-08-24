@@ -72,10 +72,10 @@ export default function ProductFormPage({
       productType: 'FINISHED_GOOD',
       salesPrice: Number(form.salesPrice),
       costPrice: Number(form.costPrice),
-      procureOnDemand: isRaw ? false : form.procureOnDemand,
-      procurementType: isRaw || !form.procureOnDemand ? null : form.procurementType,
-      vendorName: isRaw || form.procurementType !== 'PURCHASE' ? null : form.vendorName.trim(),
-      bomName: isRaw || form.procurementType !== 'MANUFACTURING' ? null : form.bomName.trim(),
+      procureOnDemand: form.procureOnDemand,
+procurementType: !form.procureOnDemand ? null : form.procurementType,
+vendorName: form.procurementType !== 'PURCHASE' ? null : form.vendorName.trim(),
+bomName: form.procurementType !== 'MANUFACTURING' ? null : form.bomName.trim(),
       imageUrl: form.imageUrl || null,
     }
 
