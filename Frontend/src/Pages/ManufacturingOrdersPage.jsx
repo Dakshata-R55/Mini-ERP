@@ -15,6 +15,7 @@ export default function ManufacturingOrdersPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   onCreate,
   onOpenOrder,
 }) {
@@ -43,6 +44,7 @@ export default function ManufacturingOrdersPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="manufacturing-orders"
       pageTitle="Manufacturing Orders"
     >

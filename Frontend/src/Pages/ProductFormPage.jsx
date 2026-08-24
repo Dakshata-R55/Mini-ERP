@@ -21,6 +21,7 @@ export default function ProductFormPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   productId,
   onBack,
   onSaved,
@@ -119,6 +120,7 @@ export default function ProductFormPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="products"
     >
       <div className="form-toolbar">

@@ -11,6 +11,7 @@ export default function BomFormPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   bomId,
   onBack,
 }) {
@@ -140,7 +141,7 @@ export default function BomFormPage({
 
   if (loading) {
     return (
-      <AppShell session={session} onSignOut={onSignOut} onNavigate={onNavigate} currentModule="boms" pageTitle="BOM">
+      <AppShell session={session} onSignOut={onSignOut} onNavigate={onNavigate} onOpenProfile={onOpenProfile} currentModule="boms" pageTitle="BOM">
         <p className="muted center-pad">Loading...</p>
       </AppShell>
     )
@@ -151,6 +152,7 @@ export default function BomFormPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="boms"
       pageTitle={bom?.reference || 'New BOM'}
     >

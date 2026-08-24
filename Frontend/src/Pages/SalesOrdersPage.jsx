@@ -28,6 +28,7 @@ export default function SalesOrdersPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   onCreate,
   onOpenOrder,
 }) {
@@ -66,6 +67,7 @@ export default function SalesOrdersPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="sales-orders"
       pageTitle="Sales Orders"
     >

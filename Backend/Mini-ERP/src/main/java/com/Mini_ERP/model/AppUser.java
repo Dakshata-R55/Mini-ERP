@@ -31,6 +31,15 @@ public class AppUser {
 
     private String fullName;
 
+    @Column(length = 500)
+    private String address;
+
+    @Column(length = 30)
+    private String mobile;
+
+    @Column(length = 500)
+    private String avatarUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserType userType;

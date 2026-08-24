@@ -35,6 +35,7 @@ export default function ProductsPage({ session, onSignOut,onNavigate,onCreate, o
   return (
     <AppShell session={session} onSignOut={onSignOut}
     onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
   currentModule="products">
       <div className="page-toolbar">
         <button type="button" className="primary-btn small-btn" onClick={onCreate}>

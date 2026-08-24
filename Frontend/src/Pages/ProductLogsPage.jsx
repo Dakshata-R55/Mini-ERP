@@ -6,6 +6,7 @@ export default function ProductLogsPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   productId,
   onBack,
 }) {
@@ -35,6 +36,7 @@ export default function ProductLogsPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="products"
     >
       <div className="form-toolbar">

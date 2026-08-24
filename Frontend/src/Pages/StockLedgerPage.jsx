@@ -10,7 +10,7 @@ function formatQty(value) {
   return Number(value || 0).toFixed(2)
 }
 
-export default function StockLedgerPage({ session, onSignOut, onNavigate }) {
+export default function StockLedgerPage({ session, onSignOut, onNavigate, onOpenProfile }) {
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -39,6 +39,7 @@ export default function StockLedgerPage({ session, onSignOut, onNavigate }) {
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="stock-ledger"
       pageTitle="Stock Ledger"
     >

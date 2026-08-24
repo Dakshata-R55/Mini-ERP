@@ -32,6 +32,7 @@ export default function ManufacturingOrderFormPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   orderId,
   onBack,
 }) {
@@ -134,7 +135,7 @@ export default function ManufacturingOrderFormPage({
 
   if (loading) {
     return (
-      <AppShell session={session} onSignOut={onSignOut} onNavigate={onNavigate} currentModule="manufacturing-orders" pageTitle="MO">
+      <AppShell session={session} onSignOut={onSignOut} onNavigate={onNavigate} onOpenProfile={onOpenProfile} currentModule="manufacturing-orders" pageTitle="MO">
         <p className="muted center-pad">Loading...</p>
       </AppShell>
     )
@@ -145,6 +146,7 @@ export default function ManufacturingOrderFormPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="manufacturing-orders"
       pageTitle={order?.reference || 'New MO'}
     >

@@ -24,6 +24,7 @@ export default function PurchaseOrderFormPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   orderId,
   onBack,
   onSaved,
@@ -184,6 +185,7 @@ export default function PurchaseOrderFormPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="purchase-orders"
     >
       <div className="form-toolbar">

@@ -26,6 +26,7 @@ export default function SalesOrderFormPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   orderId,
   onBack,
   onOpenLogs,
@@ -203,6 +204,7 @@ export default function SalesOrderFormPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="sales-orders"
       pageTitle={order?.reference || 'New Sales Order'}
     >

@@ -9,7 +9,7 @@ import {
 
 const emptyForm = () => ({ name: '', location: '' })
 
-export default function WorkCentersPage({ session, onSignOut, onNavigate }) {
+export default function WorkCentersPage({ session, onSignOut, onNavigate, onOpenProfile }) {
   const [workCenters, setWorkCenters] = useState([])
   const [form, setForm] = useState(emptyForm())
   const [editingId, setEditingId] = useState(null)
@@ -79,6 +79,7 @@ export default function WorkCentersPage({ session, onSignOut, onNavigate }) {
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="work-centers"
       pageTitle="Work Centers"
     >

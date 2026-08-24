@@ -20,6 +20,7 @@ export default function PurchaseOrdersPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   onCreate,
   onOpenOrder,
 }) {
@@ -57,6 +58,7 @@ export default function PurchaseOrdersPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="purchase-orders"
       pageTitle="Purchase Orders"
     >

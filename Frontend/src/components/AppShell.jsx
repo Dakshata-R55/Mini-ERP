@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import logo from '../assets/logo.png'
 import MasterMenu from './MasterMenu'
+import { avatarInitials } from '../utils/userDisplay'
 
 export default function AppShell({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   currentModule,
   pageTitle = 'Dashboard',
   children,
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const initials = avatarInitials(session)
 
   return (
     <div className="erp-layout">
@@ -66,7 +69,19 @@ export default function AppShell({
           <h1 className="topbar-title">{pageTitle}</h1>
 
           <div className="topbar-right">
-            <div className="user-avatar">{session.loginId?.slice(0, 2).toUpperCase()}</div>
+            <button
+              type="button"
+              className="user-avatar-btn"
+              onClick={() => onOpenProfile?.()}
+              title="My profile"
+              aria-label="Open profile"
+            >
+              {session.avatarUrl ? (
+                <img src={session.avatarUrl} alt="" className="user-avatar-image" />
+              ) : (
+                <div className="user-avatar">{initials}</div>
+              )}
+            </button>
             <div className="topbar-user">
               <strong>{session.loginId}</strong>
               <span>{session.userType?.replaceAll('_', ' ')}</span>

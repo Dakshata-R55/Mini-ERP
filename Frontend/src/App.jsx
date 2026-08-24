@@ -18,7 +18,10 @@ import BomFormPage from './Pages/BomFormPage'
 import ManufacturingOrdersPage from './Pages/ManufacturingOrdersPage'
 import ManufacturingOrderFormPage from './Pages/ManufacturingOrderFormPage'
 import UserManagementPage from './Pages/UserManagementPage'
+import UserProfilePage from './Pages/UserProfilePage'
+import UserProfileAdminPage from './Pages/UserProfileAdminPage'
 import { logout, fetchCurrentUser } from './api/auth'
+import { getMyProfile } from './api/profile'
 import { getToken, clearToken } from './api/client'
 
 function homeScreenFor(userType) {
@@ -40,6 +43,36 @@ export default function App() {
   const [selectedPurchaseOrderId, setSelectedPurchaseOrderId] = useState(null)
   const [selectedBomId, setSelectedBomId] = useState(null)
   const [selectedMoId, setSelectedMoId] = useState(null)
+  const [selectedUserId, setSelectedUserId] = useState(null)
+  const [profileAvatar, setProfileAvatar] = useState(null)
+  const [profileReturnScreen, setProfileReturnScreen] = useState('dashboard')
+
+  async function loadProfileAvatar() {
+    try {
+      const profile = await getMyProfile()
+      setProfileAvatar(profile.avatarUrl || null)
+    } catch {
+      setProfileAvatar(null)
+    }
+  }
+
+  const sessionWithAvatar = session
+    ? { ...session, avatarUrl: profileAvatar }
+    : null
+
+  function handleOpenProfile() {
+    setProfileReturnScreen(screen)
+    setScreen('profile')
+  }
+
+  function handleOpenUserProfile(userId) {
+    setSelectedUserId(userId)
+    setScreen('user-profile-admin')
+  }
+
+  function handleProfileUpdated(profile) {
+    setProfileAvatar(profile.avatarUrl || null)
+  }
 
   useEffect(() => {
     async function restoreSession() {
@@ -52,6 +85,7 @@ export default function App() {
         const data = await fetchCurrentUser()
         setSession(data)
         setScreen(homeScreenFor(data.userType))
+        await loadProfileAvatar()
       } catch {
         clearToken()
         setSession(null)
@@ -67,6 +101,7 @@ export default function App() {
   function handleSuccess(data) {
     setSession(data)
     setScreen(homeScreenFor(data.userType))
+    loadProfileAvatar()
   }
 
   async function handleSignOut() {
@@ -77,6 +112,8 @@ export default function App() {
     setSelectedPurchaseOrderId(null)
     setSelectedBomId(null)
     setSelectedMoId(null)
+    setSelectedUserId(null)
+    setProfileAvatar(null)
     setScreen('login')
     setLoginMode('user')
   }
@@ -131,9 +168,10 @@ export default function App() {
   if (session && screen === 'dashboard') {
     return (
       <DashboardPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
       />
     )
   }
@@ -141,9 +179,10 @@ export default function App() {
   if (session && screen === 'stock-ledger') {
     return (
       <StockLedgerPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
       />
     )
   }
@@ -151,9 +190,10 @@ export default function App() {
   if (session && screen === 'work-centers') {
     return (
       <WorkCentersPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
       />
     )
   }
@@ -161,9 +201,10 @@ export default function App() {
   if (session && screen === 'boms') {
     return (
       <BomsPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         onCreate={() => {
           setSelectedBomId(null)
           setScreen('bom-form')
@@ -179,9 +220,10 @@ export default function App() {
   if (session && screen === 'bom-form') {
     return (
       <BomFormPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         bomId={selectedBomId}
         onBack={(newId) => {
           if (newId) setSelectedBomId(newId)
@@ -194,9 +236,10 @@ export default function App() {
   if (session && screen === 'manufacturing-orders') {
     return (
       <ManufacturingOrdersPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         onCreate={() => {
           setSelectedMoId(null)
           setScreen('manufacturing-order-form')
@@ -212,9 +255,10 @@ export default function App() {
   if (session && screen === 'manufacturing-order-form') {
     return (
       <ManufacturingOrderFormPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         orderId={selectedMoId}
         onBack={(newId) => {
           if (newId) setSelectedMoId(newId)
@@ -224,12 +268,42 @@ export default function App() {
     )
   }
 
+  if (session && screen === 'profile') {
+    return (
+      <UserProfilePage
+        session={sessionWithAvatar}
+        avatarUrl={profileAvatar}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
+        onProfileUpdated={handleProfileUpdated}
+        onBack={() => setScreen(profileReturnScreen)}
+      />
+    )
+  }
+
+  if (session && screen === 'user-profile-admin') {
+    return (
+      <UserProfileAdminPage
+        session={sessionWithAvatar}
+        avatarUrl={profileAvatar}
+        userId={selectedUserId}
+        onSignOut={handleSignOut}
+        onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
+        onBack={() => setScreen('users')}
+      />
+    )
+  }
+
   if (session && screen === 'users') {
     return (
       <UserManagementPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
+        onOpenUserProfile={handleOpenUserProfile}
       />
     )
   }
@@ -237,9 +311,10 @@ export default function App() {
   if (session && screen === 'purchase-orders') {
     return (
       <PurchaseOrdersPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         onCreate={() => {
           setSelectedPurchaseOrderId(null)
           setScreen('purchase-order-form')
@@ -255,9 +330,10 @@ export default function App() {
   if (session && screen === 'purchase-order-form') {
     return (
       <PurchaseOrderFormPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         orderId={selectedPurchaseOrderId}
         onBack={(newId) => {
           if (newId) setSelectedPurchaseOrderId(newId)
@@ -275,9 +351,10 @@ export default function App() {
   if (session && screen === 'purchase-order-logs') {
     return (
       <PurchaseOrderLogsPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         orderId={selectedPurchaseOrderId}
         onBack={() => setScreen('purchase-order-form')}
       />
@@ -287,9 +364,10 @@ export default function App() {
   if (session && screen === 'sales-orders') {
     return (
       <SalesOrdersPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         onCreate={() => {
           setSelectedSalesOrderId(null)
           setScreen('sales-order-form')
@@ -305,9 +383,10 @@ export default function App() {
   if (session && screen === 'sales-order-form') {
     return (
       <SalesOrderFormPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         orderId={selectedSalesOrderId}
         onBack={(newId) => {
           if (newId) setSelectedSalesOrderId(newId)
@@ -324,9 +403,10 @@ export default function App() {
   if (session && screen === 'sales-order-logs') {
     return (
       <SalesOrderLogsPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         orderId={selectedSalesOrderId}
         onBack={() => setScreen('sales-order-form')}
       />
@@ -336,9 +416,10 @@ export default function App() {
   if (session && screen === 'products') {
     return (
       <ProductsPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         onCreate={() => {
           setSelectedProductId(null)
           setScreen('product-form')
@@ -354,9 +435,10 @@ export default function App() {
   if (session && screen === 'product-form') {
     return (
       <ProductFormPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         productId={selectedProductId}
         onBack={() => setScreen('products')}
         onSaved={() => setScreen('products')}
@@ -371,9 +453,10 @@ export default function App() {
   if (session && screen === 'product-logs') {
     return (
       <ProductLogsPage
-        session={session}
+        session={sessionWithAvatar}
         onSignOut={handleSignOut}
         onNavigate={handleNavigate}
+        onOpenProfile={handleOpenProfile}
         productId={selectedProductId}
         onBack={() => setScreen('product-form')}
       />

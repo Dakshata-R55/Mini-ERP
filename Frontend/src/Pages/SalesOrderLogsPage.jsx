@@ -6,6 +6,7 @@ export default function SalesOrderLogsPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   orderId,
   onBack,
 }) {
@@ -34,6 +35,7 @@ export default function SalesOrderLogsPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="sales-orders"
     >
       <div className="form-toolbar">

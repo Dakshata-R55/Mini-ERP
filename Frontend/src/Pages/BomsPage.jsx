@@ -6,6 +6,7 @@ export default function BomsPage({
   session,
   onSignOut,
   onNavigate,
+  onOpenProfile,
   onCreate,
   onOpenBom,
 }) {
@@ -34,6 +35,7 @@ export default function BomsPage({
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="boms"
       pageTitle="Bills of Materials"
     >

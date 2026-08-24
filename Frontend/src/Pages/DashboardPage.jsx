@@ -19,7 +19,7 @@ function StatCard({ title, value, hint, badge }) {
   )
 }
 
-export default function DashboardPage({ session, onSignOut, onNavigate }) {
+export default function DashboardPage({ session, onSignOut, onNavigate, onOpenProfile }) {
   const [stats, setStats] = useState({
     products: null,
     salesOrders: null,
@@ -72,6 +72,7 @@ export default function DashboardPage({ session, onSignOut, onNavigate }) {
       session={session}
       onSignOut={onSignOut}
       onNavigate={onNavigate}
+      onOpenProfile={onOpenProfile}
       currentModule="dashboard"
       pageTitle="Dashboard"
     >
