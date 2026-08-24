@@ -23,6 +23,7 @@ public class BomService {
 
     private final BillOfMaterialRepository billOfMaterialRepository;
     private final ProductRepository productRepository;
+    private final ProductService productService;
     private final WorkCenterRepository workCenterRepository;
     private final BomReferenceGenerator referenceGenerator;
     private final AuditLogService auditLogService;
@@ -39,7 +40,7 @@ public class BomService {
 
     @Transactional
     public BomResponse createBom(BomRequest request) {
-        Product finished = findFinishedProduct(request.getFinishedProductId());
+        Product finished = resolveFinishedProduct(request);
         BillOfMaterial bom = BillOfMaterial.builder()
                 .reference(referenceGenerator.nextReference())
                 .finishedProduct(finished)
@@ -60,7 +61,7 @@ public class BomService {
     @Transactional
     public BomResponse updateBom(Long id, BomRequest request) {
         BillOfMaterial bom = findWithDetails(id);
-        Product finished = findFinishedProduct(request.getFinishedProductId());
+        Product finished = resolveFinishedProduct(request);
 
         bom.setFinishedProduct(finished);
         bom.setOutputQty(request.getOutputQty());
@@ -83,9 +84,11 @@ public class BomService {
                 AuditAction.DELETE, "active", true, false, currentUsername());
     }
 
-    BillOfMaterial findWithDetails(Long id) {
-        return billOfMaterialRepository.findActiveWithDetails(id)
+    public BillOfMaterial findWithDetails(Long id) {
+        BillOfMaterial bom = billOfMaterialRepository.findActiveWithComponents(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "BOM not found"));
+        billOfMaterialRepository.findActiveWithOperations(id);
+        return bom;
     }
 
     private Product findFinishedProduct(Long productId) {
@@ -100,6 +103,47 @@ public class BomService {
         return product;
     }
 
+    private Product resolveFinishedProduct(BomRequest request) {
+        if (request.getFinishedProductId() != null
+                && (request.getFinishedProductName() == null || request.getFinishedProductName().isBlank())) {
+            Product product = findFinishedProduct(request.getFinishedProductId());
+            return productService.findOrCreateForBom(
+                    product.getName(),
+                    ProductType.FINISHED_GOOD,
+                    null);
+        }
+
+        String name = request.getFinishedProductName();
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Finished product name is required");
+        }
+
+        return productService.findOrCreateForBom(name, ProductType.FINISHED_GOOD, null);
+    }
+
+    private Product resolveComponentProduct(BomComponentRequest req) {
+        if (req.getProductId() != null) {
+            Product component = productRepository.findById(req.getProductId())
+                    .filter(Product::isActive)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Component product not found: " + req.getProductId()));
+
+            if (component.getProductType() != ProductType.RAW_MATERIAL) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "BOM components must be raw materials: " + component.getReference());
+            }
+            return component;
+        }
+
+        String name = req.getProductName();
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Raw material name is required");
+        }
+
+        return productService.findOrCreateForBom(name, ProductType.RAW_MATERIAL, null);
+    }
+
     private List<BomComponentLine> buildComponents(BillOfMaterial bom, List<BomComponentRequest> requests) {
         if (requests == null || requests.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "BOM must have at least one component");
@@ -107,15 +151,7 @@ public class BomService {
 
         return requests.stream()
                 .map(req -> {
-                    Product component = productRepository.findById(req.getProductId())
-                            .filter(Product::isActive)
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                                    "Component product not found: " + req.getProductId()));
-
-                    if (component.getProductType() != ProductType.RAW_MATERIAL) {
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                                "BOM components must be raw materials: " + component.getReference());
-                    }
+                    Product component = resolveComponentProduct(req);
 
                     return BomComponentLine.builder()
                             .billOfMaterial(bom)

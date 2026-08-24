@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
-import { listProducts } from '../api/products'
+import { listBoms, getBom } from '../api/boms'
 import {
   createManufacturingOrder,
   getManufacturingOrder,
@@ -28,6 +28,12 @@ const WO_STATUS_LABELS = {
   DONE: 'Done',
 }
 
+function scaledQty(qtyToProduce, outputQty, qtyPerOutput) {
+  const output = Number(outputQty) || 1
+  const scale = Number(qtyToProduce) / output
+  return (Number(qtyPerOutput) * scale).toFixed(2)
+}
+
 export default function ManufacturingOrderFormPage({
   session,
   onSignOut,
@@ -37,38 +43,71 @@ export default function ManufacturingOrderFormPage({
   onBack,
 }) {
   const isEdit = Boolean(orderId)
-  const [finishedProducts, setFinishedProducts] = useState([])
+  const [boms, setBoms] = useState([])
+  const [bomPreview, setBomPreview] = useState(null)
   const [order, setOrder] = useState(null)
   const [form, setForm] = useState({
+    bomId: '',
     finishedProductId: '',
+    finishedProductName: '',
     qtyToProduce: '1',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [durationInputs, setDurationInputs] = useState({})
 
   const status = order?.status || 'DRAFT'
   const isDraft = status === 'DRAFT'
+  const showBomPreview = isDraft && bomPreview
 
   useEffect(() => {
     loadData()
   }, [orderId])
 
+  async function loadBomPreview(bomId) {
+    if (!bomId) {
+      setBomPreview(null)
+      return
+    }
+    try {
+      const detail = await getBom(bomId)
+      setBomPreview(detail)
+    } catch {
+      setBomPreview(null)
+    }
+  }
+
   async function loadData() {
     setLoading(true)
     setError('')
     try {
-      const products = await listProducts({ type: 'FINISHED_GOOD' })
-      setFinishedProducts(products)
+      const bomList = await listBoms()
+      setBoms(bomList)
 
       if (isEdit) {
         const data = await getManufacturingOrder(orderId)
         setOrder(data)
         setForm({
+          bomId: data.bomId ? String(data.bomId) : '',
           finishedProductId: String(data.finishedProductId),
+          finishedProductName: data.finishedProductName || '',
           qtyToProduce: String(data.qtyToProduce),
         })
+        if (data.bomId) {
+          await loadBomPreview(data.bomId)
+        }
+
+        const drafts = {}
+        for (const wo of data.workOrders || []) {
+          if (wo.status === 'IN_PROGRESS') {
+            drafts[wo.id] = String(
+              wo.realDurationMinutes > 0 ? wo.realDurationMinutes : wo.expectedDurationMinutes ?? 0,
+            )
+          }
+        }
+        setDurationInputs(drafts)
       }
     } catch (err) {
       setError(err.message || 'Failed to load manufacturing order')
@@ -77,17 +116,44 @@ export default function ManufacturingOrderFormPage({
     }
   }
 
+  async function handleBomChange(bomId) {
+    const selected = boms.find((b) => String(b.id) === String(bomId))
+    if (!selected) {
+      setForm({
+        bomId: '',
+        finishedProductId: '',
+        finishedProductName: '',
+        qtyToProduce: form.qtyToProduce,
+      })
+      setBomPreview(null)
+      return
+    }
+
+    setForm({
+      bomId: String(selected.id),
+      finishedProductId: String(selected.finishedProductId),
+      finishedProductName: selected.finishedProductName,
+      qtyToProduce: form.qtyToProduce,
+    })
+    await loadBomPreview(selected.id)
+  }
+
   function buildPayload() {
     return {
+      bomId: form.bomId ? Number(form.bomId) : null,
       finishedProductId: Number(form.finishedProductId),
       qtyToProduce: Number(form.qtyToProduce),
-      bomId: order?.bomId || null,
       assigneeId: order?.assigneeId || null,
       salesOrderId: order?.salesOrderId || null,
     }
   }
 
   async function handleSave() {
+    if (!form.bomId) {
+      setError('Select a BOM first')
+      return
+    }
+
     setSaving(true)
     setError('')
     try {
@@ -124,13 +190,17 @@ export default function ManufacturingOrderFormPage({
     await runAction(() => startMoWorkOrder(orderId, workOrderId), 'Work order started')
   }
 
-  async function handleCompleteWorkOrder(workOrderId, expectedMinutes) {
-    const input = window.prompt('Actual duration in minutes?', String(expectedMinutes || 0))
-    if (input === null) return
+  async function handleCompleteWorkOrder(workOrderId) {
+    const wo = order?.workOrders?.find((w) => w.id === workOrderId)
+    const minutes = durationInputs[workOrderId] ?? String(wo?.expectedDurationMinutes ?? 0)
     await runAction(
-      () => completeMoWorkOrder(orderId, workOrderId, Number(input) || 0),
+      () => completeMoWorkOrder(orderId, workOrderId, Number(minutes) || 0),
       'Work order completed',
     )
+  }
+
+  function setDurationInput(workOrderId, value) {
+    setDurationInputs((prev) => ({ ...prev, [workOrderId]: value }))
   }
 
   if (loading) {
@@ -211,42 +281,147 @@ export default function ManufacturingOrderFormPage({
       {success ? <div className="success-banner">{success}</div> : null}
 
       <div className="form-card">
-        <div className="form-row">
-          <label>
-            Finished Product
-            <select
-              value={form.finishedProductId}
-              disabled={!isDraft}
-              onChange={(e) => setForm({ ...form, finishedProductId: e.target.value })}
-            >
-              <option value="">Select product</option>
-              {finishedProducts.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Qty to Produce
-            <input
-              type="number"
-              min="0.01"
-              step="0.01"
-              disabled={!isDraft}
-              value={form.qtyToProduce}
-              onChange={(e) => setForm({ ...form, qtyToProduce: e.target.value })}
-            />
-          </label>
-        </div>
+        {isDraft ? (
+          <>
+            <p className="muted toolbar-note">
+              Select a BOM first. The finished product and material preview come from that recipe.
+            </p>
 
-        {order?.bomReference ? (
-          <p className="muted">BOM: {order.bomReference}</p>
+            <div className="form-row">
+              <label>
+                Bill of Materials
+                <select
+                  value={form.bomId}
+                  onChange={(e) => handleBomChange(e.target.value)}
+                  required
+                >
+                  <option value="">Select BOM</option>
+                  {boms.map((bom) => (
+                    <option key={bom.id} value={bom.id}>
+                      {bom.reference} — {bom.finishedProductName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Product to manufacture
+                <input
+                  value={form.finishedProductName || '—'}
+                  readOnly
+                  className="readonly-input"
+                />
+              </label>
+
+              <label>
+                Qty to Produce
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={form.qtyToProduce}
+                  onChange={(e) => setForm({ ...form, qtyToProduce: e.target.value })}
+                />
+              </label>
+            </div>
+          </>
+        ) : (
+          <div className="form-row">
+            <label>
+              Bill of Materials
+              <input
+                value={order?.bomReference || '—'}
+                readOnly
+                className="readonly-input"
+              />
+            </label>
+            <label>
+              Product to manufacture
+              <input
+                value={order?.finishedProductName || form.finishedProductName || '—'}
+                readOnly
+                className="readonly-input"
+              />
+            </label>
+            <label>
+              Qty to Produce
+              <input
+                value={order?.qtyToProduce ?? form.qtyToProduce}
+                readOnly
+                className="readonly-input"
+              />
+            </label>
+          </div>
+        )}
+
+        {showBomPreview ? (
+          <>
+            <h3>BOM Preview — {bomPreview.reference}</h3>
+            <p className="muted">
+              Batch output: {Number(bomPreview.outputQty).toFixed(2)} units
+            </p>
+
+            {bomPreview.components?.length ? (
+              <>
+                <h4>Raw Materials</h4>
+                <table className="data-table inline-table">
+                  <thead>
+                    <tr>
+                      <th>Material</th>
+                      <th>Per Batch</th>
+                      <th>To Consume</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bomPreview.components.map((c) => (
+                      <tr key={c.id || c.productId}>
+                        <td>{c.productName}</td>
+                        <td>{Number(c.qtyPerOutput).toFixed(2)}</td>
+                        <td>
+                          {scaledQty(form.qtyToProduce, bomPreview.outputQty, c.qtyPerOutput)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <p className="muted">No raw materials defined on this BOM.</p>
+            )}
+
+            {bomPreview.operations?.length ? (
+              <>
+                <h4>Operations</h4>
+                <table className="data-table inline-table">
+                  <thead>
+                    <tr>
+                      <th>Seq</th>
+                      <th>Work Center</th>
+                      <th>Location</th>
+                      <th>Duration (min)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bomPreview.operations.map((op) => (
+                      <tr key={op.id || `${op.workCenterId}-${op.sequence}`}>
+                        <td>{op.sequence}</td>
+                        <td>{op.workCenterName}</td>
+                        <td>{op.location || '—'}</td>
+                        <td>{op.expectedDurationMinutes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : null}
+          </>
         ) : null}
 
         {order?.totalProductionCost != null ? (
           <p>Total production cost: ₹ {Number(order.totalProductionCost).toFixed(2)}</p>
         ) : null}
 
-        {order?.components?.length ? (
+        {!isDraft && order?.components?.length ? (
           <>
             <h3>Components to Consume</h3>
             <table className="data-table inline-table">
@@ -270,7 +445,7 @@ export default function ManufacturingOrderFormPage({
           </>
         ) : null}
 
-        {order?.workOrders?.length ? (
+        {!isDraft && order?.workOrders?.length ? (
           <>
             <h3>Work Orders</h3>
             <table className="data-table inline-table">
@@ -292,7 +467,20 @@ export default function ManufacturingOrderFormPage({
                     <td>{wo.workCenterName}</td>
                     <td>{wo.location || '-'}</td>
                     <td>{wo.expectedDurationMinutes}</td>
-                    <td>{wo.realDurationMinutes}</td>
+                    <td>
+                      {wo.status === 'IN_PROGRESS' ? (
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          className="inline-number-input"
+                          value={durationInputs[wo.id] ?? String(wo.expectedDurationMinutes ?? 0)}
+                          onChange={(e) => setDurationInput(wo.id, e.target.value)}
+                        />
+                      ) : (
+                        wo.realDurationMinutes
+                      )}
+                    </td>
                     <td>{WO_STATUS_LABELS[wo.status] || wo.status}</td>
                     <td className="row-actions">
                       {wo.status === 'PENDING' && status !== 'DRAFT' && status !== 'CANCELLED' && status !== 'DONE' ? (
@@ -304,7 +492,7 @@ export default function ManufacturingOrderFormPage({
                         <button
                           type="button"
                           className="ghost-btn small-btn"
-                          onClick={() => handleCompleteWorkOrder(wo.id, wo.expectedDurationMinutes)}
+                          onClick={() => handleCompleteWorkOrder(wo.id)}
                         >
                           Complete
                         </button>

@@ -1,6 +1,7 @@
 package com.Mini_ERP.repository;
 
 import com.Mini_ERP.model.Product;
+import com.Mini_ERP.model.ProductType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -12,4 +13,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     boolean existsByReference(String reference);
 
     Optional<Product> findTopByOrderByIdDesc();
+
+    Optional<Product> findFirstByNameIgnoreCaseAndProductTypeAndActiveTrue(String name, ProductType productType);
 }

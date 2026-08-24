@@ -10,6 +10,7 @@ function formatQty(value) {
   return Number(value || 0).toFixed(2)
 }
 
+<<<<<<< HEAD
 export default function ProductsPage({
   session,
   onSignOut,
@@ -18,6 +19,9 @@ export default function ProductsPage({
   onCreate,
   onOpenProduct,
 }) {
+=======
+export default function ProductsPage({ session, onSignOut, onNavigate, onCreate, onOpenProduct, onOpenProfile }) {
+>>>>>>> 1d1cc83 (Fix Bug in ui)
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -43,7 +47,9 @@ export default function ProductsPage({
     <AppShell session={session} onSignOut={onSignOut}
     onNavigate={onNavigate}
       onOpenProfile={onOpenProfile}
-  currentModule="products">
+      currentModule="products"
+      pageTitle="Products"
+    >
       <div className="page-toolbar">
         <button type="button" className="primary-btn small-btn" onClick={onCreate}>
           + New

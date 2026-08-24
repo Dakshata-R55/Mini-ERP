@@ -12,8 +12,22 @@ public interface BillOfMaterialRepository extends JpaRepository<BillOfMaterial, 
     @Query("SELECT b FROM BillOfMaterial b JOIN FETCH b.finishedProduct WHERE b.active = true ORDER BY b.reference")
     List<BillOfMaterial> findAllActiveWithProduct();
 
-    @Query("SELECT b FROM BillOfMaterial b JOIN FETCH b.finishedProduct LEFT JOIN FETCH b.components c LEFT JOIN FETCH c.componentProduct LEFT JOIN FETCH b.operations o LEFT JOIN FETCH o.workCenter WHERE b.id = :id AND b.active = true")
-    Optional<BillOfMaterial> findActiveWithDetails(Long id);
+    @Query("""
+            SELECT DISTINCT b FROM BillOfMaterial b
+            JOIN FETCH b.finishedProduct
+            LEFT JOIN FETCH b.components c
+            LEFT JOIN FETCH c.componentProduct
+            WHERE b.id = :id AND b.active = true
+            """)
+    Optional<BillOfMaterial> findActiveWithComponents(Long id);
+
+    @Query("""
+            SELECT DISTINCT b FROM BillOfMaterial b
+            LEFT JOIN FETCH b.operations o
+            LEFT JOIN FETCH o.workCenter
+            WHERE b.id = :id AND b.active = true
+            """)
+    Optional<BillOfMaterial> findActiveWithOperations(Long id);
 
     List<BillOfMaterial> findByFinishedProductIdAndActiveTrueOrderByReferenceAsc(Long finishedProductId);
 

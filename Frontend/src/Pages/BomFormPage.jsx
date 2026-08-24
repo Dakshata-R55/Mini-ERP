@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
-import { listProducts } from '../api/products'
 import { listWorkCenters } from '../api/workCenters'
 import { createBom, getBom, updateBom } from '../api/boms'
 
-const emptyComponent = () => ({ productId: '', qtyPerOutput: '1' })
+const emptyComponent = () => ({ materialName: '', qtyPerOutput: '1' })
 const emptyOperation = () => ({ workCenterId: '', sequence: '1', expectedDurationMinutes: '0' })
 
 export default function BomFormPage({
@@ -13,16 +12,13 @@ export default function BomFormPage({
   onNavigate,
   onOpenProfile,
   bomId,
-  finishedProductId,
   onBack,
 }) {
   const isEdit = Boolean(bomId)
-  const [finishedProducts, setFinishedProducts] = useState([])
-  const [rawMaterials, setRawMaterials] = useState([])
   const [workCenters, setWorkCenters] = useState([])
   const [bom, setBom] = useState(null)
   const [form, setForm] = useState({
-    finishedProductId: finishedProductId ? String(finishedProductId) : '',
+    finishedProductName: '',
     outputQty: '1',
     components: [emptyComponent()],
     operations: [],
@@ -33,42 +29,34 @@ export default function BomFormPage({
 
   useEffect(() => {
     loadData()
-  }, [bomId, finishedProductId])
+  }, [bomId])
 
   async function loadData() {
     setLoading(true)
     setError('')
     try {
-      const [finished, raw, centers] = await Promise.all([
-        listProducts({ type: 'FINISHED_GOOD' }),
-        listProducts({ type: 'RAW_MATERIAL' }),
-        listWorkCenters(),
-      ])
-      setFinishedProducts(finished)
-      setRawMaterials(raw)
+      const centers = await listWorkCenters()
       setWorkCenters(centers)
 
       if (isEdit) {
         const data = await getBom(bomId)
         setBom(data)
+
         setForm({
-          finishedProductId: String(data.finishedProductId),
+          finishedProductName: data.finishedProductName || '',
           outputQty: String(data.outputQty),
-          components: data.components.map((c) => ({
-            productId: String(c.productId),
-            qtyPerOutput: String(c.qtyPerOutput),
-          })),
+          components: data.components.length
+            ? data.components.map((c) => ({
+                materialName: c.productName || '',
+                qtyPerOutput: String(c.qtyPerOutput),
+              }))
+            : [emptyComponent()],
           operations: data.operations.map((o) => ({
             workCenterId: String(o.workCenterId),
             sequence: String(o.sequence),
             expectedDurationMinutes: String(o.expectedDurationMinutes),
           })),
         })
-      } else if (finishedProductId) {
-        setForm((prev) => ({
-          ...prev,
-          finishedProductId: String(finishedProductId),
-        }))
       }
     } catch (err) {
       setError(err.message || 'Failed to load BOM')
@@ -79,12 +67,12 @@ export default function BomFormPage({
 
   function buildPayload() {
     return {
-      finishedProductId: Number(form.finishedProductId),
+      finishedProductName: form.finishedProductName.trim(),
       outputQty: Number(form.outputQty),
       components: form.components
-        .filter((c) => c.productId)
+        .filter((c) => c.materialName.trim())
         .map((c) => ({
-          productId: Number(c.productId),
+          productName: c.materialName.trim(),
           qtyPerOutput: Number(c.qtyPerOutput),
         })),
       operations: form.operations
@@ -98,8 +86,14 @@ export default function BomFormPage({
   }
 
   async function handleSave() {
-    if (!form.finishedProductId) {
-      setError('Product to manufacture is required')
+    if (!form.finishedProductName.trim()) {
+      setError('Finished product name is required')
+      return
+    }
+
+    const components = form.components.filter((c) => c.materialName.trim())
+    if (components.length === 0) {
+      setError('Add at least one raw material')
       return
     }
 
@@ -150,28 +144,10 @@ export default function BomFormPage({
     setForm({ ...form, operations: form.operations.filter((_, i) => i !== index) })
   }
 
-  const finishedProductName =
-    bom?.finishedProductName ||
-    finishedProducts.find((p) => String(p.id) === String(form.finishedProductId))?.name ||
-    '—'
-
   if (loading) {
     return (
       <AppShell session={session} onSignOut={onSignOut} onNavigate={onNavigate} onOpenProfile={onOpenProfile} currentModule="boms" pageTitle="BOM">
         <p className="muted center-pad">Loading...</p>
-      </AppShell>
-    )
-  }
-
-  if (!isEdit && !form.finishedProductId) {
-    return (
-      <AppShell session={session} onSignOut={onSignOut} onNavigate={onNavigate} onOpenProfile={onOpenProfile} currentModule="boms" pageTitle="BOM">
-        <div className="form-card">
-          <p className="muted">Choose a product to manufacture before defining the BOM recipe.</p>
-          <button type="button" className="ghost-btn" onClick={() => onBack()}>
-            ← Back
-          </button>
-        </div>
       </AppShell>
     )
   }
@@ -198,13 +174,18 @@ export default function BomFormPage({
       {error ? <div className="error-banner">{error}</div> : null}
 
       <div className="form-card">
+        <p className="muted toolbar-note">
+          Type the finished product and raw materials. New names are added to the product catalog automatically.
+        </p>
+
         <div className="form-row">
           <label>
-            Product to manufacture
+            Finished Product
             <input
-              value={finishedProductName}
-              readOnly
-              className="readonly-input"
+              type="text"
+              placeholder="e.g. Office Chair"
+              value={form.finishedProductName}
+              onChange={(e) => setForm({ ...form, finishedProductName: e.target.value })}
             />
           </label>
           <label>
@@ -219,11 +200,7 @@ export default function BomFormPage({
           </label>
         </div>
 
-        <p className="muted toolbar-note">
-          Add raw materials and work-center steps used to manufacture this finished good.
-        </p>
-
-        <h3>Raw Material Components</h3>
+        <h3>Raw Materials</h3>
         <table className="data-table inline-table">
           <thead>
             <tr>
@@ -236,15 +213,12 @@ export default function BomFormPage({
             {form.components.map((line, index) => (
               <tr key={index}>
                 <td>
-                  <select
-                    value={line.productId}
-                    onChange={(e) => updateComponent(index, 'productId', e.target.value)}
-                  >
-                    <option value="">Select raw material</option>
-                    {rawMaterials.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
+                  <input
+                    type="text"
+                    placeholder="e.g. Plywood, Screws"
+                    value={line.materialName}
+                    onChange={(e) => updateComponent(index, 'materialName', e.target.value)}
+                  />
                 </td>
                 <td>
                   <input
@@ -262,9 +236,9 @@ export default function BomFormPage({
             ))}
           </tbody>
         </table>
-        <button type="button" className="ghost-btn small-btn" onClick={addComponent}>+ Add Component</button>
+        <button type="button" className="ghost-btn small-btn" onClick={addComponent}>+ Add Raw Material</button>
 
-        <h3>Work Center Operations</h3>
+        <h3>Work Center Operations (optional)</h3>
         <table className="data-table inline-table">
           <thead>
             <tr>

@@ -72,6 +72,95 @@ public class ProductService {
         return toResponse(saved);
     }
 
+    /**
+     * Find an active product by name/type or create a minimal catalog entry for BOM setup.
+     * Called from BOM flows so manufacturing users do not need Products write access.
+     */
+    @Transactional
+    public Product findOrCreateForBom(String name, ProductType type, String vendorName) {
+        String trimmed = name.trim();
+        if (trimmed.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product name is required");
+        }
+
+        return productRepository
+                .findFirstByNameIgnoreCaseAndProductTypeAndActiveTrue(trimmed, type)
+                .map(existing -> updateVendorIfMissing(existing, type, vendorName))
+                .orElseGet(() -> createMinimalProduct(trimmed, type, vendorName, BigDecimal.ZERO));
+    }
+
+    /**
+     * Find or create a raw material for purchase orders (purchase users may not have Products write access).
+     */
+    @Transactional
+    public Product findOrCreateRawMaterialForPurchase(String name, BigDecimal costPrice) {
+        String trimmed = name.trim();
+        if (trimmed.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Raw material name is required");
+        }
+
+        BigDecimal cost = costPrice != null ? costPrice : BigDecimal.ZERO;
+
+        return productRepository
+                .findFirstByNameIgnoreCaseAndProductTypeAndActiveTrue(trimmed, ProductType.RAW_MATERIAL)
+                .map(existing -> updateCostIfMissing(existing, cost))
+                .orElseGet(() -> createMinimalProduct(trimmed, ProductType.RAW_MATERIAL, null, cost));
+    }
+
+    private Product updateCostIfMissing(Product existing, BigDecimal costPrice) {
+        if (costPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            return existing;
+        }
+        if (existing.getCostPrice().compareTo(BigDecimal.ZERO) > 0) {
+            return existing;
+        }
+        existing.setCostPrice(costPrice);
+        return productRepository.save(existing);
+    }
+
+    private Product updateVendorIfMissing(Product existing, ProductType type, String vendorName) {
+        if (type != ProductType.FINISHED_GOOD || vendorName == null || vendorName.isBlank()) {
+            return existing;
+        }
+        if (existing.getVendorName() != null && !existing.getVendorName().isBlank()) {
+            return existing;
+        }
+        existing.setVendorName(vendorName.trim());
+        return productRepository.save(existing);
+    }
+
+    private Product createMinimalProduct(String name, ProductType type, String vendorName, BigDecimal costPrice) {
+        ProductRequest request = new ProductRequest();
+        request.setName(name);
+        request.setProductType(type);
+        request.setSalesPrice(BigDecimal.ZERO);
+        request.setCostPrice(costPrice != null ? costPrice : BigDecimal.ZERO);
+        request.setProcureOnDemand(false);
+        if (type == ProductType.FINISHED_GOOD && vendorName != null && !vendorName.isBlank()) {
+            request.setVendorName(vendorName.trim());
+        }
+
+        validateProductTypeRules(request);
+        validateProcurementSetup(request);
+
+        Product product = Product.builder()
+                .reference(referenceGenerator.nextReference())
+                .name(request.getName().trim())
+                .productType(request.getProductType())
+                .salesPrice(request.getSalesPrice())
+                .costPrice(request.getCostPrice())
+                .onHandQty(BigDecimal.ZERO)
+                .reservedQty(BigDecimal.ZERO)
+                .procureOnDemand(false)
+                .vendorName(request.getVendorName())
+                .active(true)
+                .build();
+
+        Product saved = productRepository.save(product);
+        logCreate(saved);
+        return saved;
+    }
+
     /** Update product master only — never changes On Hand / Reserved. */
     @Transactional
     public ProductResponse updateProduct(Long id, ProductRequest request) {
@@ -199,6 +288,10 @@ public class ProductService {
 
     private void validateProcurementSetup(ProductRequest request) {
         if (request.getProductType() == ProductType.RAW_MATERIAL) {
+            return;
+        }
+
+        if (!request.isProcureOnDemand()) {
             return;
         }
 

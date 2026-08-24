@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
 import PurchaseOrderLineTable from '../components/PurchaseOrderLineTable'
 import { listVendors } from '../api/vendors'
-import { listProducts } from '../api/products'
 import {
   createPurchaseOrder,
   getPurchaseOrder,
@@ -14,9 +13,10 @@ import {
 
 const emptyLine = () => ({
   productId: '',
+  productName: '',
   orderedQty: '1',
   receivedQty: '0',
-  unitCostPrice: '',
+  unitCostPrice: '0',
   units: 'Units',
 })
 
@@ -32,7 +32,6 @@ export default function PurchaseOrderFormPage({
 }) {
   const isEdit = Boolean(orderId)
   const [vendors, setVendors] = useState([])
-  const [products, setProducts] = useState([])
   const [order, setOrder] = useState(null)
   const [form, setForm] = useState({
     vendorId: '',
@@ -43,6 +42,7 @@ export default function PurchaseOrderFormPage({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const status = order?.status || 'DRAFT'
   const isDraft = status === 'DRAFT'
@@ -57,12 +57,8 @@ export default function PurchaseOrderFormPage({
     setLoading(true)
     setError('')
     try {
-      const [vendorData, productData] = await Promise.all([
-        listVendors(),
-        listProducts({ type: 'RAW_MATERIAL' }),
-      ])
+      const vendorData = await listVendors()
       setVendors(vendorData)
-      setProducts(productData)
 
       if (isEdit) {
         const data = await getPurchaseOrder(orderId)
@@ -96,15 +92,21 @@ export default function PurchaseOrderFormPage({
       startDate: form.startDate,
       responsiblePersonId: null,
       lines: form.lines.map((line) => ({
-        productId: Number(line.productId),
+        productName: line.productName.trim(),
         orderedQty: Number(line.orderedQty),
-        unitCostPrice: Number(line.unitCostPrice),
+        unitCostPrice: Number(line.unitCostPrice || 0),
         units: line.units || 'Units',
       })),
     }
   }
 
   async function handleSave() {
+    const hasEmptyMaterial = form.lines.some((line) => !line.productName?.trim())
+    if (hasEmptyMaterial) {
+      setError('Each line needs a raw material name')
+      return
+    }
+
     setSaving(true)
     setError('')
     try {
@@ -140,15 +142,31 @@ export default function PurchaseOrderFormPage({
   }
 
   async function handleReceive() {
+    const missingLineId = form.lines.some((line) => !line.id)
+    if (missingLineId) {
+      setError('Order lines are missing ids. Reload the page and try again.')
+      return
+    }
+
+    const receiveLines = form.lines.map((line) => {
+      const ordered = Number(line.orderedQty || 0)
+      const entered = Number(line.receivedQty || 0)
+      // If received qty left at 0, receive the full ordered amount
+      const receivedQty = entered > 0 ? entered : ordered
+      return { lineId: Number(line.id), receivedQty }
+    })
+
+    if (receiveLines.every((line) => line.receivedQty <= 0)) {
+      setError('Nothing to receive on this order')
+      return
+    }
+
     setSaving(true)
     setError('')
+    setSuccess('')
     try {
-      await receivePurchaseOrder(orderId, {
-        lines: form.lines.map((line) => ({
-          lineId: line.id,
-          receivedQty: Number(line.receivedQty || 0),
-        })),
-      })
+      await receivePurchaseOrder(orderId, { lines: receiveLines })
+      setSuccess('Goods received and stock updated')
       await loadData()
     } catch (err) {
       setError(err.message || 'Failed to receive')
@@ -187,6 +205,7 @@ export default function PurchaseOrderFormPage({
       onNavigate={onNavigate}
       onOpenProfile={onOpenProfile}
       currentModule="purchase-orders"
+      pageTitle={order?.reference || 'New Purchase Order'}
     >
       <div className="form-toolbar">
         <div className="form-toolbar-left">
@@ -253,6 +272,7 @@ export default function PurchaseOrderFormPage({
         </div>
 
         {error ? <div className="error-banner">{error}</div> : null}
+        {success ? <div className="success-banner">{success}</div> : null}
 
         {loading ? (
           <p className="muted">Loading...</p>
@@ -309,7 +329,6 @@ export default function PurchaseOrderFormPage({
 
             <PurchaseOrderLineTable
               lines={form.lines}
-              products={products}
               readonly={readonly}
               receiveMode={isReceiveMode}
               onChange={(lines) => setForm({ ...form, lines })}

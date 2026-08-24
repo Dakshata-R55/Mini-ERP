@@ -27,6 +27,7 @@ public class PurchaseOrderService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final VendorService vendorService;
     private final ProductRepository productRepository;
+    private final ProductService productService;
     private final UserRepository userRepository;
     private final PurchaseOrderReferenceGenerator referenceGenerator;
     private final AuditLogService auditLogService;
@@ -231,18 +232,7 @@ public class PurchaseOrderService {
     private List<PurchaseOrderLine> buildLines(PurchaseOrder order, List<PurchaseOrderLineRequest> lineRequests) {
         return lineRequests.stream()
                 .map(req -> {
-                    Product product = productRepository.findById(req.getProductId())
-                            .filter(Product::isActive)
-                            .orElseThrow(() -> new ResponseStatusException(
-                                    HttpStatus.BAD_REQUEST, "Product not found: " + req.getProductId()));
-
-                    if (product.getProductType() != ProductType.RAW_MATERIAL) {
-                        throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST,
-                                "Purchase orders can only include raw material products. "
-                                        + product.getReference() + " is a finished good."
-                        );
-                    }
+                    Product product = resolveLineProduct(req);
 
                     BigDecimal unitCostPrice = req.getUnitCostPrice() != null
                             ? req.getUnitCostPrice()
@@ -260,6 +250,7 @@ public class PurchaseOrderService {
                 .toList();
     }
 
+<<<<<<< HEAD
 private boolean belongsToResponsible(PurchaseOrder order, Long userId) {
     return order.getResponsiblePerson() != null && order.getResponsiblePerson().getId().equals(userId);
 }
@@ -271,6 +262,32 @@ private Long currentUserId() {
     }
     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
 }
+=======
+    private Product resolveLineProduct(PurchaseOrderLineRequest req) {
+        if (req.getProductId() != null) {
+            Product product = productRepository.findById(req.getProductId())
+                    .filter(Product::isActive)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "Product not found: " + req.getProductId()));
+
+            if (product.getProductType() != ProductType.RAW_MATERIAL) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Purchase orders can only include raw material products. "
+                                + product.getReference() + " is a finished good."
+                );
+            }
+            return product;
+        }
+
+        String name = req.getProductName();
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Raw material name is required");
+        }
+
+        return productService.findOrCreateRawMaterialForPurchase(name, req.getUnitCostPrice());
+    }
+>>>>>>> 1d1cc83 (Fix Bug in ui)
 
     private void reverseReceivedStock(PurchaseOrder order) {
         for (PurchaseOrderLine line : order.getLines()) {

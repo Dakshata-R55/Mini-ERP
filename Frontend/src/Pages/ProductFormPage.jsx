@@ -121,6 +121,7 @@ export default function ProductFormPage({
       onNavigate={onNavigate}
       onOpenProfile={onOpenProfile}
       currentModule="products"
+      pageTitle={isEdit ? `Product ${reference}` : 'New Product'}
     >
       <div className="form-toolbar">
         <div className="form-toolbar-left">

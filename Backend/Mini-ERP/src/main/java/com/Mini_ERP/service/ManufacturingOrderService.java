@@ -354,8 +354,7 @@ private Long currentUserId() {
 
     private BillOfMaterial resolveBom(Long bomId, Long finishedProductId) {
         if (bomId != null) {
-            BillOfMaterial bom = billOfMaterialRepository.findActiveWithDetails(bomId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "BOM not found"));
+            BillOfMaterial bom = bomService.findWithDetails(bomId);
             if (!bom.getFinishedProduct().getId().equals(finishedProductId)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "BOM does not match the finished product");
@@ -391,8 +390,10 @@ private Long currentUserId() {
     }
 
     private ManufacturingOrder findWithDetails(Long id) {
-        return manufacturingOrderRepository.findActiveWithDetails(id)
+        ManufacturingOrder order = manufacturingOrderRepository.findActiveWithComponents(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Manufacturing order not found"));
+        manufacturingOrderRepository.findActiveWithWorkOrders(id);
+        return order;
     }
 
     private void ensureDraft(ManufacturingOrder order) {
