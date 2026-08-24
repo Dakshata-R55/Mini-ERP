@@ -250,19 +250,18 @@ public class PurchaseOrderService {
                 .toList();
     }
 
-<<<<<<< HEAD
-private boolean belongsToResponsible(PurchaseOrder order, Long userId) {
-    return order.getResponsiblePerson() != null && order.getResponsiblePerson().getId().equals(userId);
-}
-
-private Long currentUserId() {
-    var auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
-        return details.getUser().getId();
+    private boolean belongsToResponsible(PurchaseOrder order, Long userId) {
+        return order.getResponsiblePerson() != null && order.getResponsiblePerson().getId().equals(userId);
     }
-    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
-}
-=======
+
+    private Long currentUserId() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
+            return details.getUser().getId();
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+    }
+
     private Product resolveLineProduct(PurchaseOrderLineRequest req) {
         if (req.getProductId() != null) {
             Product product = productRepository.findById(req.getProductId())
@@ -287,7 +286,6 @@ private Long currentUserId() {
 
         return productService.findOrCreateRawMaterialForPurchase(name, req.getUnitCostPrice());
     }
->>>>>>> 1d1cc83 (Fix Bug in ui)
 
     private void reverseReceivedStock(PurchaseOrder order) {
         for (PurchaseOrderLine line : order.getLines()) {
