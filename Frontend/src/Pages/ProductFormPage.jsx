@@ -67,11 +67,10 @@ export default function ProductFormPage({
   }, [isEdit, productId])
 
   function buildPayload() {
-    const isRaw = form.productType === 'RAW_MATERIAL'
     const base = {
       name: form.name.trim(),
-      productType: form.productType,
-      salesPrice: isRaw ? Number(form.salesPrice || 0) : Number(form.salesPrice),
+      productType: 'FINISHED_GOOD',
+      salesPrice: Number(form.salesPrice),
       costPrice: Number(form.costPrice),
       procureOnDemand: isRaw ? false : form.procureOnDemand,
       procurementType: isRaw || !form.procureOnDemand ? null : form.procurementType,
@@ -146,14 +145,19 @@ export default function ProductFormPage({
       </div>
 
       <div className="form-card">
-        <h2>{isEdit ? `Edit Product — ${reference}` : 'New Product'}</h2>
+        <h2>{isEdit ? `Edit Finished Product — ${reference}` : 'New Product'}</h2>
 
         {error ? <div className="error-banner">{error}</div> : null}
 
         {loading ? (
           <p className="muted">Loading...</p>
         ) : (
-          <ProductFormFields form={form} onChange={setForm} readOnlyQty={isEdit} />
+          <ProductFormFields
+          form={form}
+          onChange={setForm}
+          readOnlyQty={isEdit}
+          fixedProductType="FINISHED_GOOD"
+        />
         )}
       </div>
     </AppShell>

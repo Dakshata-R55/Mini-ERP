@@ -10,7 +10,14 @@ function formatQty(value) {
   return Number(value || 0).toFixed(2)
 }
 
-export default function ProductsPage({ session, onSignOut,onNavigate,onCreate, onOpenProduct }) {
+export default function ProductsPage({
+  session,
+  onSignOut,
+  onNavigate,
+  onOpenProfile,
+  onCreate,
+  onOpenProduct,
+}) {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -23,7 +30,7 @@ export default function ProductsPage({ session, onSignOut,onNavigate,onCreate, o
     setLoading(true)
     setError('')
     try {
-      const data = await listProducts()
+      const data = await listProducts({ type: 'FINISHED_GOOD' })
       setProducts(data)
     } catch (err) {
       setError(err.message || 'Failed to load products')

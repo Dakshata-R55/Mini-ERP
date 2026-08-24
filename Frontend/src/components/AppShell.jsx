@@ -18,13 +18,13 @@ export default function AppShell({
   return (
     <div className="erp-layout">
       <aside className="erp-sidebar">
-        <div className="sidebar-brand">
-          <img src={logo} alt="" className="erp-logo" />
-          <div>
-            <strong>SHIV FURNITURE</strong>
-            <span>Mini ERP Portal</span>
-          </div>
-        </div>
+      <div className="sidebar-brand">
+  <img src={logo} alt="Shiv Furniture Works" className="erp-logo" />
+  <div className="sidebar-brand-text">
+    <strong>SHIV FURNITURE</strong>
+    <span>Mini ERP Portal</span>
+  </div>
+</div>
 
         <MasterMenu
           session={session}
@@ -36,13 +36,13 @@ export default function AppShell({
       {mobileMenuOpen ? (
         <div className="menu-overlay mobile-only" onClick={() => setMobileMenuOpen(false)}>
           <aside className="master-menu mobile-drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="sidebar-brand">
-              <img src={logo} alt="" className="erp-logo" />
-              <div>
-                <strong>SHIV FURNITURE</strong>
-                <span>Mini ERP Portal</span>
-              </div>
-            </div>
+          <div className="sidebar-brand">
+  <img src={logo} alt="Shiv Furniture Works" className="erp-logo" />
+  <div className="sidebar-brand-text">
+    <strong>SHIV FURNITURE</strong>
+    <span>Mini ERP Portal</span>
+  </div>
+</div>
             <MasterMenu
               session={session}
               current={currentModule}

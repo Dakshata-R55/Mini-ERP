@@ -14,10 +14,18 @@ function normalizeImageType(file) {
   return ''
 }
 
-export default function ProductFormFields({ form, onChange, readOnlyQty = false }) {
+export default function ProductFormFields({
+  form,
+  onChange,
+  readOnlyQty = false,
+  fixedProductType = null,
+}) {
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+
+  const isFinishedGood =
+    fixedProductType === 'FINISHED_GOOD' || form.productType !== 'RAW_MATERIAL'
 
   function setField(name, value) {
     onChange({ ...form, [name]: value })
@@ -94,29 +102,36 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
       />
 
       <div className="product-form-left">
-        <div className="field">
-          <label htmlFor="productType">Product Type</label>
-          <select
-            id="productType"
-            value={form.productType || 'FINISHED_GOOD'}
-            onChange={(e) => {
-              const productType = e.target.value
-              onChange({
-                ...form,
-                productType,
-                procureOnDemand: productType === 'RAW_MATERIAL' ? false : form.procureOnDemand,
-                procurementType: productType === 'RAW_MATERIAL' ? '' : form.procurementType,
-                vendorName: productType === 'RAW_MATERIAL' ? '' : form.vendorName,
-                bomName: productType === 'RAW_MATERIAL' ? '' : form.bomName,
-                salesPrice: productType === 'RAW_MATERIAL' ? form.salesPrice || '0' : form.salesPrice,
-              })
-            }}
-            required
-          >
-            <option value="FINISHED_GOOD">Finished Good</option>
-            <option value="RAW_MATERIAL">Raw Material</option>
-          </select>
-        </div>
+        {fixedProductType ? (
+          <div className="field">
+            <label>Product Type</label>
+            <input value="Finished Good" readOnly className="readonly-input" />
+          </div>
+        ) : (
+          <div className="field">
+            <label htmlFor="productType">Product Type</label>
+            <select
+              id="productType"
+              value={form.productType || 'FINISHED_GOOD'}
+              onChange={(e) => {
+                const productType = e.target.value
+                onChange({
+                  ...form,
+                  productType,
+                  procureOnDemand: productType === 'RAW_MATERIAL' ? false : form.procureOnDemand,
+                  procurementType: productType === 'RAW_MATERIAL' ? '' : form.procurementType,
+                  vendorName: productType === 'RAW_MATERIAL' ? '' : form.vendorName,
+                  bomName: productType === 'RAW_MATERIAL' ? '' : form.bomName,
+                  salesPrice: productType === 'RAW_MATERIAL' ? form.salesPrice || '0' : form.salesPrice,
+                })
+              }}
+              required
+            >
+              <option value="FINISHED_GOOD">Finished Good</option>
+              <option value="RAW_MATERIAL">Raw Material</option>
+            </select>
+          </div>
+        )}
 
         <div className="field">
           <label htmlFor="name">Product</label>
@@ -128,7 +143,7 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
           />
         </div>
 
-        {form.productType !== 'RAW_MATERIAL' ? (
+        {isFinishedGood ? (
           <div className="field">
             <label htmlFor="salesPrice">Sales Price</label>
             <div className="money-input">
@@ -241,18 +256,18 @@ export default function ProductFormFields({ form, onChange, readOnlyQty = false 
           </div>
         </div>
 
-        {form.productType === 'FINISHED_GOOD' ? (
-        <label className="checkbox-row">
-          <input
-            type="checkbox"
-            checked={form.procureOnDemand}
-            onChange={(e) => handleProcureToggle(e.target.checked)}
-          />
-          Procure on Demand
-        </label>
+        {isFinishedGood ? (
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={form.procureOnDemand}
+              onChange={(e) => handleProcureToggle(e.target.checked)}
+            />
+            Procure on Demand
+          </label>
         ) : null}
 
-        {form.productType === 'FINISHED_GOOD' && form.procureOnDemand ? (
+        {isFinishedGood && form.procureOnDemand ? (
           <>
             <div className="field">
               <label htmlFor="procurementType">Procurement Type</label>
