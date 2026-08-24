@@ -13,6 +13,7 @@ export default function BomFormPage({
   onNavigate,
   onOpenProfile,
   bomId,
+  finishedProductId,
   onBack,
 }) {
   const isEdit = Boolean(bomId)
@@ -21,7 +22,7 @@ export default function BomFormPage({
   const [workCenters, setWorkCenters] = useState([])
   const [bom, setBom] = useState(null)
   const [form, setForm] = useState({
-    finishedProductId: '',
+    finishedProductId: finishedProductId ? String(finishedProductId) : '',
     outputQty: '1',
     components: [emptyComponent()],
     operations: [],
@@ -32,7 +33,7 @@ export default function BomFormPage({
 
   useEffect(() => {
     loadData()
-  }, [bomId])
+  }, [bomId, finishedProductId])
 
   async function loadData() {
     setLoading(true)
@@ -63,6 +64,11 @@ export default function BomFormPage({
             expectedDurationMinutes: String(o.expectedDurationMinutes),
           })),
         })
+      } else if (finishedProductId) {
+        setForm((prev) => ({
+          ...prev,
+          finishedProductId: String(finishedProductId),
+        }))
       }
     } catch (err) {
       setError(err.message || 'Failed to load BOM')
@@ -92,6 +98,11 @@ export default function BomFormPage({
   }
 
   async function handleSave() {
+    if (!form.finishedProductId) {
+      setError('Product to manufacture is required')
+      return
+    }
+
     setSaving(true)
     setError('')
     try {
@@ -139,10 +150,28 @@ export default function BomFormPage({
     setForm({ ...form, operations: form.operations.filter((_, i) => i !== index) })
   }
 
+  const finishedProductName =
+    bom?.finishedProductName ||
+    finishedProducts.find((p) => String(p.id) === String(form.finishedProductId))?.name ||
+    '—'
+
   if (loading) {
     return (
       <AppShell session={session} onSignOut={onSignOut} onNavigate={onNavigate} onOpenProfile={onOpenProfile} currentModule="boms" pageTitle="BOM">
         <p className="muted center-pad">Loading...</p>
+      </AppShell>
+    )
+  }
+
+  if (!isEdit && !form.finishedProductId) {
+    return (
+      <AppShell session={session} onSignOut={onSignOut} onNavigate={onNavigate} onOpenProfile={onOpenProfile} currentModule="boms" pageTitle="BOM">
+        <div className="form-card">
+          <p className="muted">Choose a product to manufacture before defining the BOM recipe.</p>
+          <button type="button" className="ghost-btn" onClick={() => onBack()}>
+            ← Back
+          </button>
+        </div>
       </AppShell>
     )
   }
@@ -171,17 +200,12 @@ export default function BomFormPage({
       <div className="form-card">
         <div className="form-row">
           <label>
-            Finished Product
-            <select
-              value={form.finishedProductId}
-              onChange={(e) => setForm({ ...form, finishedProductId: e.target.value })}
-              required
-            >
-              <option value="">Select product</option>
-              {finishedProducts.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            Product to manufacture
+            <input
+              value={finishedProductName}
+              readOnly
+              className="readonly-input"
+            />
           </label>
           <label>
             Output Qty (per batch)
@@ -194,6 +218,10 @@ export default function BomFormPage({
             />
           </label>
         </div>
+
+        <p className="muted toolbar-note">
+          Add raw materials and work-center steps used to manufacture this finished good.
+        </p>
 
         <h3>Raw Material Components</h3>
         <table className="data-table inline-table">
@@ -212,7 +240,7 @@ export default function BomFormPage({
                     value={line.productId}
                     onChange={(e) => updateComponent(index, 'productId', e.target.value)}
                   >
-                    <option value="">Select</option>
+                    <option value="">Select raw material</option>
                     {rawMaterials.map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
@@ -254,7 +282,7 @@ export default function BomFormPage({
                     value={line.workCenterId}
                     onChange={(e) => updateOperation(index, 'workCenterId', e.target.value)}
                   >
-                    <option value="">Select</option>
+                    <option value="">Select work center</option>
                     {workCenters.map((wc) => (
                       <option key={wc.id} value={wc.id}>{wc.name}</option>
                     ))}
