@@ -255,9 +255,13 @@ public class PurchaseOrderService {
     }
 
     private Long currentUserId() {
+        return currentUser().getId();
+    }
+
+    private AppUser currentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
-            return details.getUser().getId();
+            return details.getUser();
         }
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
     }
@@ -346,12 +350,12 @@ public class PurchaseOrderService {
     }
 
     private AppUser resolveResponsiblePerson(Long responsiblePersonId) {
-        if (responsiblePersonId == null) {
-            return null;
+        if (responsiblePersonId != null) {
+            return userRepository.findById(responsiblePersonId)
+                    .filter(AppUser::isActive)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Responsible person not found"));
         }
-        return userRepository.findById(responsiblePersonId)
-                .filter(AppUser::isActive)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Responsible person not found"));
+        return currentUser();
     }
 
     private PurchaseOrder findWithDetails(Long id) {

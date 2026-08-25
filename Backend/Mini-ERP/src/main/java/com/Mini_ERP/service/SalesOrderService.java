@@ -242,13 +242,17 @@ public class SalesOrderService {
     return order.getSalesPerson() != null && order.getSalesPerson().getId().equals(userId);
 }
 
-private Long currentUserId() {
-    var auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
-        return details.getUser().getId();
+    private Long currentUserId() {
+        return currentUser().getId();
     }
-    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
-}
+
+    private AppUser currentUser() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
+            return details.getUser();
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+    }
 
     private void releaseReservations(SalesOrder order) {
         for (SalesOrderLine line : order.getLines()) {
@@ -305,12 +309,12 @@ private Long currentUserId() {
     }
 
     private AppUser resolveSalesPerson(Long salesPersonId) {
-        if (salesPersonId == null) {
-            return null;
+        if (salesPersonId != null) {
+            return userRepository.findById(salesPersonId)
+                    .filter(AppUser::isActive)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sales person not found"));
         }
-        return userRepository.findById(salesPersonId)
-                .filter(AppUser::isActive)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sales person not found"));
+        return currentUser();
     }
 
     private SalesOrder findWithDetails(Long id) {

@@ -4,6 +4,7 @@ import com.Mini_ERP.model.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -14,6 +15,7 @@ public class RolePermissionCatalog {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Transactional
     public void apply(AppUser user, UserType type) {
         user.getModulePermissions().clear();
         entityManager.flush();

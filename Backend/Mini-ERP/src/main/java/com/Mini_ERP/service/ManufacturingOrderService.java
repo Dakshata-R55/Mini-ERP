@@ -67,13 +67,17 @@ private boolean matchesSearch(ManufacturingOrder order, String search) {
             || order.getFinishedProduct().getName().toLowerCase().contains(q);
 }
 
-private Long currentUserId() {
-    var auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
-        return details.getUser().getId();
+    private Long currentUserId() {
+        return currentUser().getId();
     }
-    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
-}
+
+    private AppUser currentUser() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
+            return details.getUser();
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+    }
 
     public ManufacturingOrderResponse getOrder(Long id) {
         return toResponse(findWithDetails(id));
@@ -381,12 +385,12 @@ private Long currentUserId() {
     }
 
     private AppUser resolveAssignee(Long assigneeId) {
-        if (assigneeId == null) {
-            return null;
+        if (assigneeId != null) {
+            return userRepository.findById(assigneeId)
+                    .filter(AppUser::isActive)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assignee not found"));
         }
-        return userRepository.findById(assigneeId)
-                .filter(AppUser::isActive)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assignee not found"));
+        return currentUser();
     }
 
     private ManufacturingOrder findWithDetails(Long id) {
